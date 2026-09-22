@@ -19,6 +19,14 @@
 .shot-slots{height:12px;gap:3px}.shot-slot{width:4px;height:9px;border-color:#788493}.shot-slot:nth-child(5){height:12px;margin-right:3px}
 .viewfinder>span{top:-30px;height:24px;padding:5px 8px;background:rgba(10,24,40,.92);font:600 11px/14px ui-monospace,SFMono-Regular,Consolas,monospace}
 @media(max-width:600px){.shot-meter{top:-30px;bottom:auto;right:0;padding:5px 6px;gap:6px}.shot-slots{gap:2px}.viewfinder>span{font-size:9px;padding:5px}}
+
+/* Smaller original-style labels; remaining count carries the warning color. */
+.shot-slots{display:none}.shot-meter-label{line-height:11px}.shot-meter strong{display:block}
+.shot-meter{top:-21px;bottom:auto;right:0;height:auto;padding:3px 6px;background:#12335dba;gap:0}
+.shot-meter strong,.shot-meter strong b,.shot-meter strong>span{font:700 9px/11px Barlow,Arial,sans-serif;color:inherit;opacity:1}
+.shot-meter.low{color:#ffd06a}.shot-meter.last{color:#ff7770}
+.shot-meter.low strong,.shot-meter.last strong{color:inherit}
+.viewfinder>span{top:-21px;height:auto;padding:3px 6px;background:#12335dba;font:700 9px/11px Barlow,Arial,sans-serif}
 </style></head>
 <body><main id="game">
 <header class="masthead"><div class="logo" aria-label="Newsworthy"><strong>NEWS</strong><span>WORTHY</span></div><nav class="header-links" aria-label="About Newsworthy"><a href="https://reactor.inc" target="_blank" rel="noopener">Powered by Reactor</a><button id="how-to-play">How to play</button><a href="https://about.vamonke.com" target="_blank" rel="noopener">About</a><a href="https://github.com/vamonke/newsworthy" target="_blank" rel="noopener">GitHub</a></nav><button id="high-scores" aria-haspopup="dialog">HIGH SCORES</button></header>
