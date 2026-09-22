@@ -1,6 +1,11 @@
 export const dollars=n=>'$'+Number(n||0).toLocaleString();
 export function tintPhoto(node,value){node.style.setProperty('--photo-color',value>=750?'#dc382d':value>=500?'#f1ba39':value>=250?'#154bae':'#607286');node.style.setProperty('--photo-ink',value>=500&&value<750?'#432e00':'#fff');}
 export function photoTitle(node,result,fallback='Not scored'){node.textContent=result?.headline||fallback;if(result?.repeat){const tag=document.createElement('span');tag.className='photo-repeat';tag.textContent='REPEAT';node.append(' ',tag);}}
-let frame;
-export function countMoney(node,value){cancelAnimationFrame(frame);node.textContent='$0';node.setAttribute('aria-label',dollars(value)+' earned');if(matchMedia('(prefers-reduced-motion: reduce)').matches){node.textContent=dollars(value);return;}const start=performance.now();function tick(now){if(!node.isConnected)return;const p=Math.min(1,(now-start)/1100);node.textContent=dollars(Math.round(value*(1-(1-p)**3)));if(p<1)frame=requestAnimationFrame(tick);}frame=requestAnimationFrame(tick);}
+export function countMoney(node,value){
+ node.getAnimations().forEach(animation=>animation.cancel());
+ node.textContent=dollars(value);
+ node.setAttribute('aria-label',dollars(value)+' earned');
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ node.animate([{transform:'scale(.82)',opacity:0},{transform:'scale(1.09)',opacity:1,offset:.6},{transform:'scale(1)',opacity:1}],{duration:340,easing:'cubic-bezier(.2,.7,.3,1)'});
+}
 export function detailsFor(node,r){node.replaceChildren();if(!r)return;const add=(tag,cls,text)=>{const e=document.createElement(tag);e.className=cls;e.textContent=text;return e;};node.append(add('p','photo-reason',r.reason.replace(/^Another shot of this story[^.]*\. /,'')));const grades=add('div','photo-grades','');for(const [key,label] of [['event','Impact'],['clarity','Clarity'],['spectacle','Spectacle']]){const col=add('div','','');col.append(add('small','',label),add('b','',(r.grades?.[key]??'—')+'/4'));grades.append(col);}node.append(grades);if(Number.isFinite(r.baseScore))node.append(add('p','photo-rating','Photo rating: '+r.baseScore+'/10'));if(r.repeat)node.append(add('p','photo-rating','Repeat photo · 50% payout'));node.append(add('strong','detail-earnings',dollars(r.earned)+' earned'));const help=document.createElement('details');help.className='rating-help';help.append(add('summary','','How ratings work'),add('p','','1. Photo quality: (Impact + Spectacle) × Clarity ÷ 3.2 gives a rating out of 10. If Impact or Clarity is zero, the rating is zero.'),add('p','','2. Repeat adjustment: a repeat earns half that rating. A new story keeps the full rating.'));node.append(help);}
