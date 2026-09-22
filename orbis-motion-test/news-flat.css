@@ -162,3 +162,8 @@
 .broadcast .viewfinder.low-shots{border-color:#ffd06a}
 .broadcast .viewfinder.low-shots i{border-color:#ffd06a}
 .viewfinder.low-shots .shot-count{color:#ffd06a}
+
+/* Cooldown clears left to right, leaving the final sliver on the right. */
+.event-desk .incidents button.event-cooling::before{inset:0 0 0 auto}
+#flash{background:#03080e;z-index:8}
+#sale.pending-photo{animation:none}
