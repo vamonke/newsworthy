@@ -155,3 +155,10 @@
 .viewfinder .shot-count{position:absolute;top:-21px;right:0;left:auto;margin:0;padding:3px 6px;background:#12335dba;color:white;font:700 9px Barlow,Arial;white-space:nowrap}
 
 .picture-stage:has(#connection:not([hidden])) .capture-zone{visibility:hidden}
+
+/* First-shot guidance clears the image once the player has learned to shoot. */
+.viewfinder>.shoot-hint{top:50%;left:50%;transform:translate(-50%,-50%);padding:5px 8px;font:700 10px/12px Barlow,Arial,sans-serif}
+.viewfinder .shot-count,.viewfinder .shot-count b,.viewfinder .shot-count span{font:700 9px/11px Barlow,Arial,sans-serif}
+.broadcast .viewfinder.low-shots{border-color:#ffd06a}
+.broadcast .viewfinder.low-shots i{border-color:#ffd06a}
+.viewfinder.low-shots .shot-count{color:#ffd06a}
