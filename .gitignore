@@ -12,6 +12,7 @@
 !/orbis-motion-test/newsworthy*.js
 !/orbis-motion-test/news-design.html
 !/orbis-motion-test/news-design.css
+!/orbis-motion-test/news-broadcast.css
 !/orbis-motion-test/news-judge-api.js
 !/orbis-motion-test/news-judge.test.js
 !/orbis-motion-test/news-*preview.html

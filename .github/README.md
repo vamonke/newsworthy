@@ -22,7 +22,7 @@ npm run build:newsworthy
 
 ## Design previews
 
-The playable game retains its original design. The proposed 2000s broadcast design is in `orbis-motion-test/news-broadcast-revised-preview.html`; the 1990s, 2000s, and 2010s alternatives are retained as separate HTML files.
+The playable game uses the approved 2000s broadcast design in `news-broadcast.css`. Its standalone preview is in `orbis-motion-test/news-broadcast-revised-preview.html`; the 1990s, 2000s, and 2010s alternatives are retained as separate HTML files.
 
 To view the standalone art studies with their existing relative image paths:
 
