@@ -42,8 +42,8 @@
 .recap-title-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 #final-count{font:600 12px Barlow;color:#6b7380}
 #photo-detail{width:min(920px,94vw);padding:0;max-height:94dvh;text-align:left}
-.detail-body{display:grid;grid-template-columns:1.4fr 1fr}
-#detail-image{width:100%;height:auto;max-height:none;align-self:center;object-fit:contain}
+.detail-body{display:grid;grid-template-columns:1.4fr 1fr;align-items:start}
+#detail-image{width:100%;height:auto;max-height:none;align-self:start;object-fit:contain}
 .detail-copy{padding:22px}
 #photo-detail h2{font:700 22px/1.2 Barlow;margin:0}
 .photo-reason{font:400 13px/1.5 Barlow;color:#596b7c}
