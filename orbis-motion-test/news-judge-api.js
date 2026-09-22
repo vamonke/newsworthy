@@ -16,7 +16,7 @@ export function createNewsJudge(key,fetcher=fetch){
   if(typeof photoId!=='string'||!/^shot-[0-9]{1,2}$/.test(photoId)||typeof image!=='string'||image.length>1800000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(image))throw new Error('Invalid photograph');
   const hash=createHash('sha256').update(image).digest('hex');
   const existing=r.photos.get(photoId);if(existing){if(existing.hash!==hash)throw new Error('Photo ID already used');return existing.promise;}
-  if(r.photos.size>=10)throw new Error('This round already has 10 photos.');
+  if(r.photos.size>=12)throw new Error('This round already has 12 photos.');
   const promise=r.tail.catch(()=>{}).then(async()=>{
    if(r.hashes.has(hash)){const old=r.hashes.get(hash),earned=payoutFor(old.value,old.value);r.total+=earned;return {...old,score:earned/100,earned,total:r.total,reason:'Repeat photo · 50% of its value.',duplicate:true,repeat:true};}
    if(!key)throw new Error('Photo judge is not configured.');
