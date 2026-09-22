@@ -1,0 +1,18 @@
+{
+  "name": "newsworthy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "dev:newsworthy": "vite --config orbis-motion-test/newsworthy.vite.config.js",
+    "build:newsworthy": "vite build --config orbis-motion-test/newsworthy.vite.config.js",
+    "test:newsworthy": "node --test orbis-motion-test/newsworthy-crop.test.js orbis-motion-test/news-judge.test.js"
+  },
+  "dependencies": {
+    "@reactor-team/js-sdk": "^3.0.2"
+  },
+  "devDependencies": {
+    "vite": "^7.1.5"
+  }
+}

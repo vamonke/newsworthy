@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {cropRect} from './newsworthy-crop.js';
+test('maps covered landscape video to centered portrait viewport',()=>{const c=cropRect(1920,1080,600,800);assert.ok(c.sx>500);assert.ok(Math.abs(c.sw/c.sh-4/3)<1e-9);});
+test('aim remains inside source at all viewport edges',()=>{for(const [w,h] of [[600,800],[1200,600],[360,440]])for(const x of [-1,0,.5,1,2])for(const y of [-1,0,.5,1,2]){const c=cropRect(1920,1080,w,h,x,y);assert.ok(c.sx>=0&&c.sy>=0);assert.ok(c.sx+c.sw<=1920.0001);assert.ok(c.sy+c.sh<=1080.0001);assert.ok(Math.abs(c.width/c.height-4/3)<1e-9);}});
