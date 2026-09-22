@@ -5,12 +5,18 @@
 @media(max-width:1100px){.workspace{grid-template-columns:165px minmax(0,1fr) 180px}.stats{right:12px}.on-air{left:12px}.stats>div,.stats>div:first-child{padding:8px}.stats strong{font-size:24px}#headline{font-size:22px}}
 @media(max-width:800px){#game{height:auto;min-height:100dvh}.workspace{grid-template-columns:155px minmax(0,1fr)}.broadcast{height:650px;min-height:0}.roll{grid-column:1/-1;min-height:170px}.event-desk{max-height:650px}.on-air>span{font-size:7px}.stats small{font-size:7px}.stats strong{font-size:21px}.lower-third{padding-left:85px}.network{width:85px;font-size:25px}.network span{font-size:17px}.preview{display:none}}
 @media(max-width:520px){.workspace{grid-template-columns:1fr}.broadcast{grid-row:1;height:560px}.event-desk{grid-row:2;max-height:none}.event-desk .incidents{grid-template-columns:1fr 1fr}.roll{grid-row:3}.masthead{height:70px}.lower-third{height:108px}.headline{height:77px}#headline{font-size:20px}.capture-zone{bottom:155px}.on-air{top:15px}.stats{top:15px}.ticker b{min-width:85px;padding-inline:5px}.logo{width:110px}}
+
+/* Single-line station wordmark and in-picture audio control. */
+.masthead .logo{display:block;width:auto;white-space:nowrap;font:bold italic 32px/1 Impact,'Arial Narrow',Arial;letter-spacing:-.5px}.masthead .logo strong,.masthead .logo>span{font:inherit;color:white;letter-spacing:inherit}.on-air{box-shadow:none}.on-air #sound{display:block;margin-top:7px;padding:7px 10px;background:linear-gradient(#233e59,#172e47);border:1px solid #6d849e;color:#f0f5fa;font:700 9px Arial;letter-spacing:.4px;box-shadow:0 2px 4px #0004}.on-air #sound:hover{background:linear-gradient(#345778,#234260)}
+@media(max-width:520px){.masthead .logo{font-size:29px}}
+
+.masthead{justify-content:flex-start;gap:28px;height:65px}.header-links{display:flex;align-items:center;gap:24px}.header-links a,.header-links button{font:12px Arial;color:#b8c9dc;text-decoration:none;background:none;border:0;padding:8px 0;cursor:pointer}.header-links a:hover,.header-links button:hover{color:#fff}.header-links a:focus-visible{outline:3px solid #f5ba36;outline-offset:4px}@media(max-width:520px){.masthead{padding-inline:12px;gap:16px}.masthead .logo{font-size:25px}.header-links{gap:12px}.header-links a,.header-links button{font-size:10px}}
 </style></head>
 <body><main id="game">
-<header class="masthead"><div class="logo" aria-label="Newsworthy"><strong>NEWS</strong><span>WORTHY</span></div><div class="preview">LIVE CITY<span>2 minutes · 10 photos</span></div><div class="tools"><button id="sound" aria-pressed="true">SOUND ON</button></div></header>
+<header class="masthead"><div class="logo" aria-label="Newsworthy"><strong>NEWS</strong><span>WORTHY</span></div><nav class="header-links" aria-label="About Newsworthy"><a href="https://reactor.inc" target="_blank" rel="noopener">Powered by Reactor ↗</a><button id="how-to-play">How to play</button></nav></header>
 <div class="workspace"><aside class="event-desk"><h2>CREATE SCENE</h2><div class="incidents" id="event-options"></div><div id="event-playing" hidden><strong id="event-name"></strong><span id="cooldown"></span></div><form id="custom"><label for="idea">Or type anything.</label><input id="idea" aria-label="Your event" maxlength="140" placeholder="Raining rubber ducks…"><button>SEND →</button></form><section class="event-history-panel" aria-label="Events sent"><h3>EVENTS SENT</h3><ol id="event-history"><li class="history-empty">Your events appear here.</li></ol></section><button id="restart">END ROUND</button></aside><section class="broadcast" aria-label="News camera">
 <video id="feed" autoplay playsinline poster="public/news-judge/ordinary.jpg"></video><img id="opening-scene" src="public/news-judge/busy-opening-ufo-v4.png" alt="Starting image: a car fire, giant rubber duck and alien flying saucer across downtown streets"><div class="shade"></div><div id="connection" role="status" hidden><strong id="connection-title">Opening the city…</strong><p id="connection-note">Your timer starts when the live picture arrives.</p><button id="retry-connect" hidden>TRY AGAIN</button><button id="release" hidden>STOP PREVIOUS SESSION</button></div><div id="flash"></div>
-<div class="on-air"><b>● LIVE</b><span>ORBIS NEWS / CHOPPER 01</span></div>
+<div class="on-air"><b>● LIVE</b><span>ORBIS NEWS / CHOPPER 01</span><button id="sound" aria-pressed="true">SOUND ON</button></div>
 <div class="stats"><div><small>TIME LEFT</small><strong id="clock">2:00</strong></div><div><small>YOUR EARNINGS</small><strong id="money">$0</strong></div></div>
 <div class="viewfinder" id="aim"><span>CLICK TO SHOOT</span><i></i><i></i><i></i><i></i></div>
 <div class="capture-zone"><p id="notice" role="status">Find a story. Get the shot. Get paid.</p><small class="shot-count"><b id="remaining">10</b> SHOTS LEFT</small></div>
@@ -30,6 +36,7 @@ for(const event of EVENTS){const b=document.createElement('button');b.textConten
 q('#custom').onsubmit=e=>{e.preventDefault();q('#notice').textContent='Preview only · No scene sent.';};
 q('#restart').onclick=()=>{q('#welcome').showModal();};
 q('#begin').onclick=()=>q('#welcome').close();
+q('#how-to-play').onclick=()=>q('#welcome').showModal();
 q('#sound').onclick=()=>{const on=q('#sound').getAttribute('aria-pressed')!=='true';q('#sound').setAttribute('aria-pressed',String(on));q('#sound').textContent=on?'SOUND ON':'SOUND OFF';};
 q('.ticker-pause').onclick=()=>{const paused=q('.ticker').classList.toggle('ticker-paused');q('.ticker-pause').setAttribute('aria-pressed',String(paused));q('.ticker-pause').setAttribute('aria-label',paused?'Resume scrolling text':'Pause scrolling text');q('.ticker-pause').textContent=paused?'▶':'Ⅱ';};
 </script></body></html>
