@@ -131,16 +131,29 @@
 .viewfinder i{border:0}.viewfinder i:nth-of-type(1){top:0;left:0;right:auto;bottom:auto;border-top:3px solid white;border-left:3px solid white}.viewfinder i:nth-of-type(2){top:0;right:0;left:auto;bottom:auto;border-top:3px solid white;border-right:3px solid white}.viewfinder i:nth-of-type(3){bottom:0;left:0;right:auto;top:auto;border-bottom:3px solid white;border-left:3px solid white}.viewfinder i:nth-of-type(4){bottom:0;right:0;left:auto;top:auto;border-bottom:3px solid white;border-right:3px solid white}
 @media(max-width:1050px){.lower-third .breaking{flex-basis:82px;font-size:21px;padding:0 10px}.headline h1{font-size:23px}.lower-third .network{flex-basis:82px}.network::before{left:0}}
 @media(max-width:600px){.on-air{top:12px;left:10px}.on-air>span{font-size:7px;padding:0 7px}.stats{top:12px;right:10px}.stats>div{padding:6px}.stats strong{font-size:22px}.stats small{font-size:7px;letter-spacing:0}.lower-third .breaking{flex-basis:65px;font-size:18px;padding:0 8px}.lower-third .headline{padding:8px}.headline h1{font-size:20px}.lower-third .network{flex-basis:65px}.network strong{font-size:23px}.network span{font-size:9px}}
+
+/* Reserve space for the news graphics rather than painting over paid video. */
+.broadcast{display:grid;grid-template-rows:minmax(0,1fr) 78px 29px;background:#142d48}
+.picture-stage{position:relative;min-height:0;overflow:hidden;background:#101e2c}
+.picture-stage #feed,.picture-stage #opening-scene{width:100%;height:100%;object-fit:contain}
+.broadcast .lower-third,.broadcast .ticker{position:relative;inset:auto;width:100%;height:100%;min-width:0}
+.ticker>b{display:flex;align-items:center;justify-content:center;align-self:stretch;padding:0 12px;line-height:1}
+.picture-stage .capture-zone{bottom:18px}
+.on-air #sound{background:#f5cf56;color:#142d48;border:1px solid #e1b731;padding:7px 10px}
+.on-air #sound[aria-pressed="false"]{background:var(--cream);border-color:#cfcfc4}
+.broadcast .viewfinder{box-shadow:0 0 0 200vmax #07142155}
+.event-desk .incidents button{display:flex;align-items:center;gap:8px;text-align:left}
+.event-icon{flex:0 0 18px;text-align:center;line-height:1}
 </style></head>
 <body><main id="game">
 <header class="masthead"><div class="logo">NEWS<span>WORTHY</span></div><div class="preview">LIVE CITY<span>2 minutes · 10 photos</span></div><div class="tools"><button id="help">HOW TO PLAY</button></div></header>
 <div class="workspace"><aside class="event-desk"><h2>CREATE SCENE</h2><div class="incidents" id="event-options"></div><div id="event-playing" hidden><strong id="event-name"></strong><span id="cooldown"></span></div><form id="custom"><label for="idea">Or type anything.</label><input id="idea" aria-label="Your event" maxlength="140" placeholder="Raining rubber ducks…"><button>SEND →</button></form><section class="event-history-panel" aria-label="Events sent"><h3>EVENTS SENT</h3><ol id="event-history"><li class="history-empty">Your events appear here.</li></ol></section><button id="restart">END ROUND</button></aside><section class="broadcast" aria-label="News camera">
-<video id="feed" autoplay playsinline poster="public/news-judge/ordinary.jpg"></video><img id="opening-scene" src="public/news-judge/busy-opening-ufo-v4.png" alt="Starting image: a car fire, giant rubber duck and alien flying saucer across downtown streets"><div class="shade"></div><div id="connection" role="status" hidden><strong id="connection-title">Opening the city…</strong><p id="connection-note">Your timer starts when the live picture arrives.</p><button id="retry-connect" hidden>TRY AGAIN</button><button id="release" hidden>STOP PREVIOUS SESSION</button></div><div id="flash"></div>
+<div class="picture-stage"><video id="feed" autoplay playsinline poster="public/news-judge/ordinary.jpg"></video><img id="opening-scene" src="public/news-judge/busy-opening-ufo-v4.png" alt="Starting image: a car fire, giant rubber duck and alien flying saucer across downtown streets"><div class="shade"></div><div id="connection" role="status" hidden><strong id="connection-title">Opening the city…</strong><p id="connection-note">Your timer starts when the live picture arrives.</p><button id="retry-connect" hidden>TRY AGAIN</button><button id="release" hidden>STOP PREVIOUS SESSION</button></div><div id="flash"></div>
 <div class="on-air"><b>● LIVE</b><span>ORBIS NEWS / CHOPPER 01</span><button id="sound" aria-pressed="true">SOUND ON</button></div>
 <div class="stats"><div><small>TIME LEFT</small><strong id="clock">2:00</strong></div><div><small>YOUR EARNINGS</small><strong id="money">$0</strong></div></div>
 <div class="viewfinder" id="aim"><span>CLICK TO SHOOT</span><i></i><i></i><i></i><i></i></div>
 <div class="capture-zone"><p id="notice" role="status">Find a story. Get the shot. Get paid.</p><small class="shot-count"><b id="remaining">10</b> SHOTS LEFT</small></div>
-<div class="lower-third"><div class="breaking"><span>BREAKING</span><span>NEWS</span></div><div class="headline"><h1 id="headline">Crash blocks downtown intersection.</h1></div><div class="network"><strong>ORBIS</strong><span>NEWS</span><small>CHANNEL</small></div></div>
+</div><div class="lower-third"><div class="breaking"><span>BREAKING</span><span>NEWS</span></div><div class="headline"><h1 id="headline">Crash blocks downtown intersection.</h1></div><div class="network"><strong>ORBIS</strong><span>NEWS</span><small>CHANNEL</small></div></div>
 <div class="ticker"><b>ON THE WIRE</b><div class="ticker-window" aria-label="About this game"><div class="ticker-track"><span class="ticker-copy"><span class="maker-link">BUILT BY VARICK · HIRE ME</span><i>•</i><a href="https://reactor.inc" target="_blank" rel="noopener">POWERED BY REACTOR</a><i>•</i>LIVE VIDEO GENERATED WITH VISKO ORBIS<i>•</i>YOU MAKE THE CHAOS. WE MAKE THE HEADLINES.<i>•</i><a href="https://ncase.itch.io/wbwwb" target="_blank" rel="noopener">INSPIRED BY “WE BECOME WHAT WE BEHOLD”, BY NICKY CASE</a><i>•</i></span><span class="ticker-copy" aria-hidden="true"><span class="maker-link">BUILT BY VARICK · HIRE ME</span><i>•</i><a tabindex="-1" href="https://reactor.inc" target="_blank" rel="noopener">POWERED BY REACTOR</a><i>•</i>LIVE VIDEO GENERATED WITH VISKO ORBIS<i>•</i>YOU MAKE THE CHAOS. WE MAKE THE HEADLINES.<i>•</i><a tabindex="-1" href="https://ncase.itch.io/wbwwb" target="_blank" rel="noopener">INSPIRED BY “WE BECOME WHAT WE BEHOLD”, BY NICKY CASE</a><i>•</i></span></div></div><button class="ticker-pause" aria-label="Pause scrolling text" aria-pressed="false">Ⅱ</button></div>
 </section>
 <aside class="roll"><div class="roll-title"><span>CAMERA ROLL</span><b id="count">0 / 10</b></div><div id="photos"><div class="empty"><span>📷</span><p>Your photos appear here.</p></div></div><div class="roll-footer"><span>YOUR EARNINGS</span><strong id="total">$0</strong></div></aside></div>
@@ -151,7 +164,7 @@
 </main><script type="module">
 import { EVENTS } from '/newsworthy-events.js';
 const options = document.querySelector('#event-options');
-for (const event of EVENTS) { const button = document.createElement('button'); button.textContent = event.label; options.append(button); }
+for (const event of EVENTS) { const button = document.createElement('button'); const [emoji,...words]=event.label.split(' '); const icon=document.createElement('span'); icon.className='event-icon'; icon.textContent=emoji; icon.setAttribute('aria-hidden','true'); const label=document.createElement('span'); label.textContent=words.join(' '); button.append(icon,label); options.append(button); }
 
 document.querySelector('#custom').addEventListener('submit', e=>e.preventDefault());
 document.querySelector('#sound').addEventListener('click', e=>{const on=e.currentTarget.getAttribute('aria-pressed')!=='true';e.currentTarget.setAttribute('aria-pressed',String(on));e.currentTarget.textContent=on?'SOUND ON':'SOUND OFF';});
