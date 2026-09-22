@@ -31,6 +31,9 @@
 .viewfinder>span{top:50%;left:50%;transform:translate(-50%,-50%);padding:5px 8px;font:700 10px/12px Barlow,Arial,sans-serif}
 
 .shot-meter.after-shot{top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);white-space:nowrap}
+
+.broadcast .viewfinder.low-shots{border-color:#ffd06a}
+.broadcast .viewfinder.low-shots i{border-color:#ffd06a}
 </style></head>
 <body><main id="game">
 <header class="masthead"><div class="logo" aria-label="Newsworthy"><strong>NEWS</strong><span>WORTHY</span></div><nav class="header-links" aria-label="About Newsworthy"><a href="https://reactor.inc" target="_blank" rel="noopener">Powered by Reactor</a><button id="how-to-play">How to play</button><a href="https://about.vamonke.com" target="_blank" rel="noopener">About</a><a href="https://github.com/vamonke/newsworthy" target="_blank" rel="noopener">GitHub</a></nav><button id="high-scores" aria-haspopup="dialog">HIGH SCORES</button></header>
@@ -52,6 +55,6 @@
 import {EVENTS} from './newsworthy-events.js';
 for(const event of EVENTS){const button=document.createElement('button');const [emoji,...words]=event.label.split(' ');const icon=document.createElement('span');icon.className='event-icon';icon.textContent=emoji;const text=document.createElement('span');text.textContent=words.join(' ');button.append(icon,text);document.querySelector('#event-options').append(button);}
 let left=10;const slots=document.querySelector('.shot-slots');for(let i=0;i<10;i++){const slot=document.createElement('span');slot.className='shot-slot';slots.append(slot);}
-function paint(){document.querySelector('#remaining').textContent=String(left);document.querySelector('#count').textContent=(10-left)+' / 10';document.querySelector('#shot-hint').textContent=left===0?'Camera roll full':left===1?'Make it count':left<=3?'Choose your moment':'Make each one count';const meter=document.querySelector('.shot-meter');meter.classList.toggle('after-shot',left<10);meter.classList.toggle('low',left<=3&&left>1);meter.classList.toggle('last',left<=1);Array.from(slots.children).forEach((slot,i)=>slot.classList.toggle('available',i<left));document.querySelector('#simulate').disabled=!left;document.querySelector('#aim>span').hidden=left<10;}
+function paint(){document.querySelector('#remaining').textContent=String(left);document.querySelector('#count').textContent=(10-left)+' / 10';document.querySelector('#shot-hint').textContent=left===0?'Camera roll full':left===1?'Make it count':left<=3?'Choose your moment':'Make each one count';const meter=document.querySelector('.shot-meter');meter.classList.toggle('low',left<=3);document.querySelector('#aim').classList.toggle('low-shots',left<=3);Array.from(slots.children).forEach((slot,i)=>slot.classList.toggle('available',i<left));document.querySelector('#simulate').disabled=!left;document.querySelector('#aim>span').hidden=left<10;}
 function takePhoto(){if(left)left--;paint();}document.querySelector('#simulate').onclick=takePhoto;document.querySelector('.picture-stage').onclick=e=>{if(!e.target.closest('button'))takePhoto();};document.querySelector('#state').onchange=e=>{left=Number(e.target.value);paint();};document.querySelector('#reset').onclick=()=>{left=10;document.querySelector('#state').value='10';paint();};document.querySelector('#custom').onsubmit=e=>e.preventDefault();paint();
 </script></body></html>
