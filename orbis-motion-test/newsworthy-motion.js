@@ -1,3 +1,4 @@
+import {STAR_THRESHOLDS,starsFor,starMessage} from './newsworthy-stars.js';
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 export function installDialogMotion(dialog){
  if(dialog.dataset.motion)return;dialog.dataset.motion='true';
@@ -13,9 +14,14 @@ export function shutter(node){
 }
 export function revealRecap(dialog,total){
  const cards=[...dialog.querySelectorAll('.recap-photo')],number=dialog.querySelector('#final-total');
- if(reduced()){number.textContent='$'+total.toLocaleString();return;}
+ let rating=dialog.querySelector('.round-rating');if(!rating){rating=document.createElement('div');rating.className='round-rating';dialog.querySelector('.recap-top').after(rating);}
+ rating.innerHTML='<div class="round-stars" role="img"></div><p class="star-message"></p>';
+ const starRow=rating.querySelector('.round-stars');STAR_THRESHOLDS.forEach(threshold=>{const item=document.createElement('span');item.className='round-star';item.innerHTML='<span aria-hidden="true">★</span><small>$'+threshold.toLocaleString()+'</small>';starRow.append(item);});
+ const updateStars=(value,animate=true)=>{const count=starsFor(value);starRow.setAttribute('aria-label',count+' of 3 stars');[...starRow.children].forEach((item,i)=>{if(i<count&&!item.classList.contains('earned')){item.classList.add('earned');if(animate&&!reduced())item.animate([{transform:'scale(.65)'},{transform:'scale(1.2)'},{transform:'scale(1)'}],{duration:360,easing:'ease-out'});}});};
+ const finish=()=>{updateStars(total,false);rating.querySelector('.star-message').textContent=starMessage(total);};updateStars(0,false);
+ if(reduced()){number.textContent='$'+total.toLocaleString();finish();return;}
  const animations=cards.map((card,i)=>card.animate([{opacity:0,transform:'translateY(18px) scale(.95)'},{opacity:1,transform:'none'}],{duration:280,delay:140+i*150,fill:'backwards',easing:'cubic-bezier(.16,1,.3,1)'}));
  number.textContent='$0';let frame;const start=performance.now()+140+Math.max(0,cards.length-1)*150+280;
- const cancel=()=>{cancelAnimationFrame(frame);animations.forEach(a=>a.cancel());number.textContent='$'+total.toLocaleString();};dialog.addEventListener('close',cancel,{once:true});
- function tick(now){if(!dialog.open){cancel();return;}const p=Math.min(1,Math.max(0,(now-start)/1000));number.textContent='$'+Math.round(total*(1-(1-p)**3)).toLocaleString();if(p<1)frame=requestAnimationFrame(tick);else number.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:230});}frame=requestAnimationFrame(tick);
+ const cancel=()=>{cancelAnimationFrame(frame);animations.forEach(a=>a.cancel());number.textContent='$'+total.toLocaleString();finish();};dialog.addEventListener('close',cancel,{once:true});
+ function tick(now){if(!dialog.open){cancel();return;}const p=Math.min(1,Math.max(0,(now-start)/1000));const value=Math.round(total*(1-(1-p)**3));number.textContent='$'+value.toLocaleString();updateStars(value);if(p===1)finish();if(p<1)frame=requestAnimationFrame(tick);else number.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:230});}frame=requestAnimationFrame(tick);
 }

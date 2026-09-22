@@ -167,3 +167,5 @@
 .event-desk .incidents button.event-cooling::before{inset:0 0 0 auto}
 #flash{background:#03080e;z-index:1}
 #sale.pending-photo{animation:none}
+
+.round-rating{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0;margin-top:12px}.round-stars{display:flex;gap:22px}.round-star{display:flex;flex-direction:column;align-items:center;color:#abb0b4}.round-star>span{font:42px/1 Arial}.round-star.earned{color:#a66b00}.round-star small{font:700 10px Barlow,Arial;color:#53687c;margin-top:5px}.star-message{min-height:18px;margin:9px 0 0;font:700 13px Barlow,Arial;color:#142d48}
