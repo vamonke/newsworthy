@@ -151,3 +151,7 @@
 .recap-photo{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
 .recap-image{flex:none;width:100%}.roll-photo-button{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
 #sale-price{transform-origin:bottom right}
+
+.viewfinder .shot-count{position:absolute;top:-21px;right:0;left:auto;margin:0;padding:3px 6px;background:#12335dba;color:white;font:700 9px Barlow,Arial;white-space:nowrap}
+
+.picture-stage:has(#connection:not([hidden])) .capture-zone{visibility:hidden}
