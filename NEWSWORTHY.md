@@ -48,4 +48,4 @@ Inspired by Nicky Case’s “We Become What We Behold”: https://ncase.itch.io
 
 Sound credits and their source/license links are preserved in the game and audio asset folder. Live video uses Reactor / Visko Orbis. Photo judging uses Google’s Gemini API.
 
-The repository is private while preparing for an eventual open-source release. No project-wide open-source license has been selected yet.
+The repository is public. No project-wide open-source license has been selected yet.
