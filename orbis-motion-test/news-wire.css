@@ -131,8 +131,6 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .event-desk .incidents button:hover:not(:disabled) { color: var(--wire-ink); background: rgba(255,255,255,.38); }
 .event-desk .incidents button:focus-visible { z-index: 2; }
 .event-desk .incidents button:disabled { color: #686a64; opacity: 1; }
-.event-desk .incidents button.event-cooling { color: var(--wire-ink); }
-.event-desk .incidents button.event-cooling::before { inset: 0 0 0 auto; width: var(--cooldown-fill,100%); background: rgba(214,40,37,.16); z-index: -1; }
 .event-icon { flex: none; width: auto; font: 900 9px/1 'SFMono-Regular',Consolas,monospace; text-align: left; }
 .event-number { font: 500 9px/1 'SFMono-Regular',Consolas,monospace; }
 .event-label { max-width: 100%; overflow-wrap: anywhere; font: 850 15px/1.05 Barlow,Arial,sans-serif; text-transform: uppercase; letter-spacing: .2px; }
@@ -158,7 +156,6 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 #event-timer-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #event-timer-left { flex: none; }
 .event-desk.events-locked .incidents, .event-desk.events-locked #custom { opacity: .45; }
-.event-desk.events-locked .incidents button.event-cooling::before { display: none; }
 .event-desk #custom {
   min-width: 0;
   margin: 0;

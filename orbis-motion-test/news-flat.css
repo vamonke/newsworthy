@@ -11,7 +11,7 @@
 .event-desk{gap:22px}.event-desk h2{font-size:28px}.event-desk .incidents button{font:800 25px 'Barlow Condensed';padding:20px 12px}.event-desk .incidents[hidden],#event-playing[hidden]{display:none}#event-playing{padding:20px 12px;background:#e6ebf3;border-left:4px solid var(--blue)}#event-name{font:800 25px 'Barlow Condensed';display:block;overflow-wrap:anywhere}#event-playing #cooldown{display:block;margin-top:10px;min-height:0}.event-desk #custom label{font-size:13px;font-weight:600}.event-desk #idea{padding:14px 8px}.event-desk #restart{margin-top:0}@media(max-width:700px){.event-desk .incidents{grid-template-columns:repeat(3,1fr)}.event-desk .incidents button{font-size:20px;padding:15px 8px}#event-playing{grid-column:1/-1}.event-desk h2{grid-column:1/-1}}
 .event-desk{gap:13px;padding:16px 12px}.event-desk h2{font-size:23px}.event-desk .incidents{gap:5px}.event-desk .incidents button{font:700 15px Barlow,Arial,sans-serif;padding:10px 9px;border-bottom-width:2px}.event-desk #custom label{font-size:11px}#event-playing{padding:9px}#event-name{font:700 13px Barlow,Arial,sans-serif}.capture-zone{bottom:128px;gap:5px}.shot-count{font-size:10px;color:white;background:#173456b3;padding:5px 8px}.viewfinder.cooling{opacity:.45}@media(max-width:700px){.event-desk .incidents{grid-template-columns:repeat(3,1fr)}.event-desk .incidents button{font-size:13px;padding:11px 7px}}
 .event-desk .incidents{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.event-desk .incidents button{font-size:12px;line-height:1.25;padding:11px 6px;min-height:49px;overflow-wrap:normal}.event-desk #custom{margin-top:3px}@media(max-width:1050px) and (min-width:701px){.event-desk{width:190px}}@media(max-width:700px){.event-desk .incidents{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.event-desk .incidents button{position:relative;isolation:isolate;overflow:hidden}.event-desk .incidents button.event-cooling{opacity:1;color:#fff}.event-desk .incidents button.event-cooling::before{content:'';position:absolute;inset:0 auto 0 0;width:var(--cooldown-fill,100%);background:#071326b8;z-index:-1;transition:width .2s linear}.pending-photo #sale-tag::before{content:'';display:inline-block;width:9px;height:9px;border:2px solid #abbdd6;border-top-color:var(--blue);border-radius:50%;margin-right:8px;animation:editor-spin .8s linear infinite}@keyframes editor-spin{to{transform:rotate(360deg)}}#flash.fire{animation:flash .24s ease-out}
+.event-desk .incidents button{position:relative;isolation:isolate;overflow:hidden}.pending-photo #sale-tag::before{content:'';display:inline-block;width:9px;height:9px;border:2px solid #abbdd6;border-top-color:var(--blue);border-radius:50%;margin-right:8px;animation:editor-spin .8s linear infinite}@keyframes editor-spin{to{transform:rotate(360deg)}}#flash.fire{animation:flash .24s ease-out}
 /* Preserve breathing room after removing the round-rules line. */
 #welcome #begin{margin-top:28px}
 .roll .empty{padding:28px 10px;text-align:center}.roll .empty>span{font-size:28px}.roll .empty p{font-size:12px}.roll .photo h3{font-size:16px;line-height:1.15}.roll .photo-meta{font-size:17px;font-weight:800;color:var(--blue)}
@@ -53,8 +53,6 @@
 /* Scene controls with compact icon spacing. */
 .event-desk .incidents button{display:flex;align-items:center;gap:6px;background:var(--blue);color:#fff}
 .event-desk .incidents button:hover:not(:disabled){background:#2363d2}
-.event-desk .incidents button.event-cooling{color:#fff}
-.event-desk .incidents button.event-cooling::before{background:#071326b8}
 .event-icon{flex:0 0 18px;text-align:center}
 
 /* Broadcast identity and two-line breaking badge. */
@@ -124,8 +122,6 @@
 .broadcast .viewfinder.low-shots i{border-color:#ffd06a}
 .viewfinder.low-shots .shot-count{color:#ffd06a}
 
-/* Cooldown clears left to right, leaving the final sliver on the right. */
-.event-desk .incidents button.event-cooling::before{inset:0 0 0 auto}
 #flash{background:#03080e;z-index:1}
 
 .round-star{flex-direction:column}
