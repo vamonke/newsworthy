@@ -44,7 +44,7 @@ function hedged(attempt,backupAfter){
 export function createNewsJudge(key,fetcher=fetch,{backupAfter=3000}={}){
  const rounds=new Map();
  return {
- create(){for(const [id,r] of rounds)if(Date.now()-r.created>1800000)rounds.delete(id);if(rounds.size>=100)throw new Error('Too many rounds. Try again later.');const id=randomUUID();rounds.set(id,{created:Date.now(),photos:new Map(),accepted:[],hashes:new Map(),total:0,tail:Promise.resolve()});return {roundId:id};},
+ create(id=randomUUID()){for(const [old,r] of rounds)if(Date.now()-r.created>1800000)rounds.delete(old);if(rounds.size>=100)throw new Error('Too many rounds. Try again later.');rounds.set(id,{created:Date.now(),photos:new Map(),accepted:[],hashes:new Map(),total:0,tail:Promise.resolve()});return {roundId:id};},
  async judge({roundId,photoId,image,thumb=image,custom:customSent=false}){
   const r=rounds.get(roundId);if(!r||Date.now()-r.created>1800000)throw new Error('Round expired. Start a new round.');
   if(typeof photoId!=='string'||!/^shot-[0-9]{1,2}$/.test(photoId)||typeof image!=='string'||image.length>1800000||!photoData.test(image)||typeof thumb!=='string'||thumb.length>400000||!photoData.test(thumb))throw new Error('Invalid photograph');
@@ -65,8 +65,11 @@ export function createNewsJudge(key,fetcher=fetch,{backupAfter=3000}={}){
    if(value>0){if(previous){if(value>previous.value)r.accepted[index]={image:thumb,value,event_type:v.event_type};}else r.accepted.push({image:thumb,value,event_type:v.event_type});}
    const result={headline:v.headline.slice(0,160),reason:previous?`Another shot of this story · 50% rate ($${Math.round(value*bonus)} → $${earned}). ${v.reason.slice(0,200)}`:custom?`Exclusive · ${CUSTOM_BONUS}× ($${value} → $${earned}). ${v.reason.slice(0,280)}`:v.reason.slice(0,300),repeat:Boolean(previous),custom,bonus,baseScore:value/100,score:earned/100,value,earned,total:r.total,ms:Date.now()-started,attempt,grades:{event:v.event_strength,clarity:v.clarity,spectacle:v.spectacle}};r.hashes.set(hash,result);return result;
   });
-  r.photos.set(photoId,{hash,promise});r.tail=promise;
-  try{return await promise;}catch(e){r.photos.delete(photoId);throw e;}
- }
+  const entry={hash,promise};r.photos.set(photoId,entry);r.tail=promise;
+  try{return entry.result=await promise;}catch(e){r.photos.delete(photoId);throw e;}
+ },
+ // Plain-data copy of a round, so a Durable Object can store it and rebuild the round after being evicted.
+ snapshot(id){const r=rounds.get(id);if(!r)return null;return {created:r.created,total:r.total,accepted:r.accepted,hashes:[...r.hashes],photos:[...r.photos].filter(([,p])=>'result' in p).map(([photoId,p])=>[photoId,p.hash,p.result])};},
+ restore(id,s){rounds.set(id,{created:s.created,total:s.total,accepted:s.accepted,hashes:new Map(s.hashes),photos:new Map(s.photos.map(([photoId,hash,result])=>[photoId,{hash,result,promise:Promise.resolve(result)}])),tail:Promise.resolve()});}
  };
 }

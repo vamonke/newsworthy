@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "newsworthy",
+  "account_id": "6fd560e6892546be11ef30883a03dd71",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  // Attach once the workers.dev deploy has been playtested:
+  // "routes": [{ "pattern": "newsworthy.vamonke.com", "custom_domain": true }],
+  "assets": {
+    "directory": "../orbis-motion-test/dist",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "GATE", "class_name": "Gate" },
+      { "name": "ROUND", "class_name": "Round" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Gate", "Round"] }],
+  "ratelimits": [
+    { "name": "TOKEN_LIMITER", "namespace_id": "4201", "simple": { "limit": 6, "period": 60 } },
+    { "name": "API_LIMITER", "namespace_id": "4202", "simple": { "limit": 240, "period": 60 } }
+  ],
+  "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "newsworthy_events" }],
+  // Secrets (wrangler secret put): REACTOR_API_KEY, GEMINI_API_KEY, and later TURNSTILE_SECRET.
+  "vars": { "LIVE_SLOTS": "4", "SLOTS_PER_IP": "2", "DAILY_SESSION_CAP": "500" },
+  "observability": { "enabled": true }
+}

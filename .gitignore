@@ -55,3 +55,9 @@
 
 # Unused 23 MB video; kept locally, not shipped.
 /orbis-motion-test/public/news-design/preview.webm
+
+# Cloudflare Worker (production)
+!/worker/
+!/orbis-motion-test/public/.assetsignore
+/worker/.dev.vars
+**/.wrangler/

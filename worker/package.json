@@ -1,0 +1,14 @@
+{
+  "name": "newsworthy-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm --prefix .. run build:newsworthy",
+    "dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "test": "node --test gate-core.test.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.137.0"
+  }
+}

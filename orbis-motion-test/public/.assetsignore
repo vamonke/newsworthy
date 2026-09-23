@@ -1,0 +1,14 @@
+# Files Vite copies from public/ that the game never loads. Wrangler skips them on deploy.
+brand-concepts/
+news-design/assignment-city.jpg
+news-design/live-dinosaur.jpg
+news-design/live-marshmallow.jpg
+news-design/preview.webm
+news-judge/busy-opening.png
+news-judge/busy-opening-ufo.png
+news-judge/busy-opening-ufo-beam.png
+news-judge/busy-opening-ufo-narrow.png
+news-judge/busy-opening-ufo-v2.png
+news-judge/busy-opening-ufo-v3.png
+news-judge/incident.jpg
+news-judge/spectacle.jpg
