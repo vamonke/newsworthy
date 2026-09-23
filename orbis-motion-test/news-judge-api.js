@@ -1,4 +1,5 @@
 import {randomUUID,createHash} from 'node:crypto';
+import {CUSTOM_BONUS,isCustom} from './newsworthy-bonus.js';
 export function scoreFor(v){
  if(v.event_strength===0||v.clarity===0)return 0;
  return Math.round((v.event_strength+v.spectacle)*v.clarity/32*10*100)/100;
@@ -44,24 +45,25 @@ export function createNewsJudge(key,fetcher=fetch,{backupAfter=3000}={}){
  const rounds=new Map();
  return {
  create(){for(const [id,r] of rounds)if(Date.now()-r.created>1800000)rounds.delete(id);if(rounds.size>=100)throw new Error('Too many rounds. Try again later.');const id=randomUUID();rounds.set(id,{created:Date.now(),photos:new Map(),accepted:[],hashes:new Map(),total:0,tail:Promise.resolve()});return {roundId:id};},
- async judge({roundId,photoId,image,thumb=image}){
+ async judge({roundId,photoId,image,thumb=image,custom:customSent=false}){
   const r=rounds.get(roundId);if(!r||Date.now()-r.created>1800000)throw new Error('Round expired. Start a new round.');
   if(typeof photoId!=='string'||!/^shot-[0-9]{1,2}$/.test(photoId)||typeof image!=='string'||image.length>1800000||!photoData.test(image)||typeof thumb!=='string'||thumb.length>400000||!photoData.test(thumb))throw new Error('Invalid photograph');
   const hash=createHash('sha256').update(image).digest('hex');
   const existing=r.photos.get(photoId);if(existing){if(existing.hash!==hash)throw new Error('Photo ID already used');return existing.promise;}
   if(r.photos.size>=12)throw new Error('This round already has 12 photos.');
   const promise=r.tail.catch(()=>{}).then(async()=>{
-   if(r.hashes.has(hash)){const old=r.hashes.get(hash),earned=payoutFor(old.value,old.value);r.total+=earned;return {...old,score:earned/100,earned,total:r.total,reason:'Repeat photo · 50% of its value.',duplicate:true,repeat:true};}
+   if(r.hashes.has(hash)){const old=r.hashes.get(hash),earned=payoutFor(Math.round(old.value*old.bonus),old.value);r.total+=earned;return {...old,score:earned/100,earned,total:r.total,reason:'Repeat photo · 50% of its value.',duplicate:true,repeat:true};}
    if(!key)throw new Error('Photo judge is not configured.');
    const content=[];r.accepted.forEach((p,i)=>content.push({type:'text',text:`Previous accepted photo ${i}:`},{type:'image_url',image_url:{url:p.image}}));content.push({type:'text',text:'CURRENT photo to grade:'},{type:'image_url',image_url:{url:image}});
    const started=Date.now();const {v,attempt}=await hedged(signal=>ask(key,fetcher,content,r.accepted.length,signal),backupAfter);
-   const value=priceFor(v);
+   // The bonus needs both: the player sent their own scene before this shot, and the headline names no preset.
+   const value=priceFor(v),custom=value>0&&customSent===true&&isCustom(v),bonus=custom?CUSTOM_BONUS:1;
    // Category labels never force distinct subjects into one story.
    const index=v.previous_index;
-   const previous=index>=0?r.accepted[index]:null,earned=payoutFor(value,previous?.value||0);r.total+=earned;
+   const previous=index>=0?r.accepted[index]:null,earned=payoutFor(Math.round(value*bonus),previous?.value||0);r.total+=earned;
    // Earlier photos go back to the judge as thumbnails: image tokens are flat per image, so this only trims upload time.
    if(value>0){if(previous){if(value>previous.value)r.accepted[index]={image:thumb,value,event_type:v.event_type};}else r.accepted.push({image:thumb,value,event_type:v.event_type});}
-   const result={headline:v.headline.slice(0,160),reason:previous?`Another shot of this story · 50% rate ($${value} → $${earned}). ${v.reason.slice(0,200)}`:v.reason.slice(0,300),repeat:Boolean(previous),baseScore:value/100,score:earned/100,value,earned,total:r.total,ms:Date.now()-started,attempt,grades:{event:v.event_strength,clarity:v.clarity,spectacle:v.spectacle}};r.hashes.set(hash,result);return result;
+   const result={headline:v.headline.slice(0,160),reason:previous?`Another shot of this story · 50% rate ($${Math.round(value*bonus)} → $${earned}). ${v.reason.slice(0,200)}`:custom?`Exclusive · ${CUSTOM_BONUS}× ($${value} → $${earned}). ${v.reason.slice(0,280)}`:v.reason.slice(0,300),repeat:Boolean(previous),custom,bonus,baseScore:value/100,score:earned/100,value,earned,total:r.total,ms:Date.now()-started,attempt,grades:{event:v.event_strength,clarity:v.clarity,spectacle:v.spectacle}};r.hashes.set(hash,result);return result;
   });
   r.photos.set(photoId,{hash,promise});r.tail=promise;
   try{return await promise;}catch(e){r.photos.delete(photoId);throw e;}

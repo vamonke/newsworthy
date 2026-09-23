@@ -83,6 +83,7 @@ dialog#welcome.np:not(#_) { width: min(860px,90vw); }
 .np:not(#_) .np-nav .np-btn:first-child { justify-self: start; }
 .np:not(#_) .np-nav .np-btn:last-child { justify-self: end; }
 .np:not(#_) .photo-repeat { padding: 3px 6px 2px; border-radius: 0; color: #fff; background: var(--wire-ink); font: 700 11px/1.2 var(--np-mono); letter-spacing: .1em; vertical-align: middle; }
+.np:not(#_) .photo-custom { padding: 3px 6px 2px; border-radius: 0; color: var(--wire-ink); background: var(--wire-yellow); font: 700 11px/1.2 var(--np-mono); letter-spacing: .1em; vertical-align: middle; }
 
 /* Photo detail content (rendered by detailsFor) */
 .np:not(#_) #detail-content { display: grid; gap: clamp(14px,1.4vw,20px); }

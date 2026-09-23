@@ -18,7 +18,7 @@
 
 .event-desk h2{font:800 11px Barlow,Arial,sans-serif;line-height:normal;letter-spacing:.6px;padding:10px 15px;margin:-16px -12px 0;border-bottom:1px solid var(--line)}
 /* Approved photo treatments */
-.photo-repeat{display:inline-block;vertical-align:middle;font:700 8px/1 Barlow,Arial;letter-spacing:.3px;padding:4px 5px;border-radius:3px;background:#e6e8e5;color:#62717d;white-space:nowrap}
+.photo-repeat{display:inline-block;vertical-align:middle;font:700 8px/1 Barlow,Arial;letter-spacing:.3px;padding:4px 5px;border-radius:3px;background:#e6e8e5;color:#62717d;white-space:nowrap}.photo-custom{display:inline-block;vertical-align:middle;font:700 8px/1 Barlow,Arial;letter-spacing:.3px;padding:4px 5px;border-radius:3px;background:#f0c94d;color:#101414;white-space:nowrap}
 .roll-photo-button{display:block;width:100%;padding:0;background:white;border:0;text-align:left;color:#142d48}
 .roll-photo-image{display:block;position:relative}
 .roll .photo-meta{position:absolute;bottom:8px;right:8px;background:var(--photo-color);color:var(--photo-ink)!important;padding:6px 9px;font:800 27px/1 'Barlow Condensed'!important}
