@@ -268,7 +268,6 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .lower-third .headline h1 { margin: 0; color: var(--wire-ink); font: 950 27px/.95 'Barlow Condensed',Impact,sans-serif; letter-spacing: -.2px; text-transform: uppercase; }
 .broadcast .ticker { position: absolute; z-index: 6; left: 0; right: 0; bottom: 0; width: auto; height: 35px; display: flex; align-items: stretch; overflow: hidden; color: white; background: #0b1111; border: 0; border-top: 1px solid #56605e; }
 .ticker > b { height: 100%; padding: 0 13px; display: flex; align-items: center; color: white; background: #0b1111; font: 900 12px/1 monospace; }
-.ticker > b::after { content: '▶'; margin-left: 8px; color: var(--wire-red); font-size: 8px; }
 .ticker-window { min-width: 0; flex: 1; height: 100%; display: flex; align-items: center; overflow: hidden; }
 .ticker-track { display: flex; width: max-content; flex-shrink: 0; animation: news-ticker 48s linear infinite; }
 .ticker-copy { padding-left: 9px; display: flex; gap: 10px; align-items: center; flex-shrink: 0; color: white; white-space: nowrap; font: 9px/1 monospace; }

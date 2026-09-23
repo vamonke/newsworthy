@@ -63,7 +63,7 @@ export function createNewsJudge(key,fetcher=fetch,{backupAfter=3000}={}){
    const previous=index>=0?r.accepted[index]:null,earned=payoutFor(Math.round(value*bonus),previous?.value||0);r.total+=earned;
    // Earlier photos go back to the judge as thumbnails: image tokens are flat per image, so this only trims upload time.
    if(value>0){if(previous){if(value>previous.value)r.accepted[index]={image:thumb,value,event_type:v.event_type};}else r.accepted.push({image:thumb,value,event_type:v.event_type});}
-   const result={headline:v.headline.slice(0,160),reason:previous?`Another shot of this story · 50% rate ($${Math.round(value*bonus)} → $${earned}). ${v.reason.slice(0,200)}`:custom?`Exclusive · ${CUSTOM_BONUS}× ($${value} → $${earned}). ${v.reason.slice(0,280)}`:v.reason.slice(0,300),repeat:Boolean(previous),custom,bonus,baseScore:value/100,score:earned/100,value,earned,total:r.total,ms:Date.now()-started,attempt,grades:{event:v.event_strength,clarity:v.clarity,spectacle:v.spectacle}};r.hashes.set(hash,result);return result;
+   const result={headline:v.headline.slice(0,160),reason:previous?`Another shot of this story · 50% rate ($${Math.round(value*bonus)} to $${earned}). ${v.reason.slice(0,200)}`:custom?`Exclusive · ${CUSTOM_BONUS}× ($${value} to $${earned}). ${v.reason.slice(0,280)}`:v.reason.slice(0,300),repeat:Boolean(previous),custom,bonus,baseScore:value/100,score:earned/100,value,earned,total:r.total,ms:Date.now()-started,attempt,grades:{event:v.event_strength,clarity:v.clarity,spectacle:v.spectacle}};r.hashes.set(hash,result);return result;
   });
   const entry={hash,promise};r.photos.set(photoId,entry);r.tail=promise;
   try{return entry.result=await promise;}catch(e){r.photos.delete(photoId);throw e;}
