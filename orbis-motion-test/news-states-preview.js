@@ -10,7 +10,7 @@ $('#sound').disabled=true;
 $('#restart').textContent='RESET PREVIEW';
 $('#restart').onclick=()=>scene('available');
 $('#welcome').remove();
-for(const event of EVENTS){const button=document.createElement('button');const [emoji,...words]=event.label.split(' ');const icon=document.createElement('span');icon.className='event-icon';icon.textContent=emoji;const label=document.createElement('span');label.textContent=words.join(' ');button.append(icon,label);button.dataset.event=event.id;button.onclick=()=>{selected=event.id;addEventHistory(event.label,Math.floor((performance.now()-previewStart)/1000));scene('active');};$('#event-options').append(button);}
+for(const event of EVENTS){const button=document.createElement('button');const icon=document.createElement('span');icon.className='event-icon';icon.textContent=event.code;const label=document.createElement('span');label.textContent=event.label;button.append(icon,label);button.dataset.event=event.id;button.onclick=()=>{selected=event.id;addEventHistory(event.label,Math.floor((performance.now()-previewStart)/1000));scene('active');};$('#event-options').append(button);}
 function paintScene(state,seconds=state==='cooldown'?10:20){
  const busy=state!=='available',sending=state==='waiting';if(busy)hasSelection=true;
  $('#event-playing').hidden=!busy;
@@ -31,5 +31,5 @@ for(const button of document.querySelectorAll('[data-photo]'))button.onclick=()=
 $('#close-preview').onclick=()=>$('#sale').close();
 $('#dismiss-sale').onclick=()=>$('#sale').close();
 const previewStart=performance.now()-60000;
-addEventHistory('🎈 Red balloon',8);addEventHistory('🦆 Rubber duck',29);addEventHistory('🛸 Aliens',51);
+addEventHistory('Red balloon',8);addEventHistory('Rubber duck',29);addEventHistory('Aliens',51);
 scene('available');

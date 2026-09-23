@@ -16,8 +16,9 @@ async function body(req, limit = 1024 * 1024) {
 }
 export default defineConfig(({ mode }) => {
   const apiKey = loadEnv(mode, workspace, '').REACTOR_API_KEY;
+  const falKey = loadEnv(mode, workspace, '').FAL_KEY;
   // Only sessions registered with the short-lived JWT issued by this test.
-  const newsJudge = createNewsJudge(loadEnv(mode, workspace, '').FAL_KEY);
+  const newsJudge = createNewsJudge(falKey);
   const sessions = new Map();
   const issued = new Set();
   async function cleanup(id, jwt) {
@@ -29,7 +30,7 @@ export default defineConfig(({ mode }) => {
     sessions.delete(id);
   }
   return {
-    root, build: { rollupOptions: { input: { news: resolve(root, 'news-design.html') } } }, server: { host: '127.0.0.1', port: 4318, strictPort: true },
+    root, build: { rollupOptions: { input: { news: resolve(root, 'news-design.html') } } }, server: { host: '127.0.0.1', port: 4320, strictPort: true },
     plugins: [{
       name: 'orbis-test-api', configureServer(server) {
         server.middlewares.use((req, res, next) => {
@@ -40,7 +41,7 @@ export default defineConfig(({ mode }) => {
         server.middlewares.use('/api', async (req, res, next) => {
           try {
             const path = req.url.split('?')[0];
-            if (path === '/status') return send(res, 200, { configured: Boolean(apiKey), model: MODEL, activeSessions: sessions.size });
+            if (path === '/status') return send(res, 200, { configured: Boolean(apiKey), judgeConfigured: Boolean(falKey), judgeProvider: 'fal-openrouter', model: MODEL, activeSessions: sessions.size });
             if (req.method !== 'POST') return next();
             // Local dev API: reject cross-origin writes.
             if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return send(res, 403, { error: 'Invalid origin' });

@@ -5,6 +5,7 @@
 !/package-lock.json
 !/.env.example
 !/NEWSWORTHY.md
+!/NEWSWORTHY-DESIGN-BRIEF.md
 !/.github/
 !/.github/README.md
 !/orbis-motion-test/
@@ -12,6 +13,7 @@
 !/orbis-motion-test/newsworthy*.js
 !/orbis-motion-test/news-design.html
 !/orbis-motion-test/news-design.css
+!/orbis-motion-test/news-studio.css
 !/orbis-motion-test/news-broadcast.css
 !/orbis-motion-test/news-judge-api.js
 !/orbis-motion-test/news-judge.test.js

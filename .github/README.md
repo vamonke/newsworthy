@@ -13,7 +13,7 @@ cp .env.example .env.local
 npm run dev:newsworthy
 ```
 
-Open http://127.0.0.1:4318/news-design.html. Live play uses Reactor and fal APIs. Keys stay on the local development server. The server is intended for local use; a static build alone does not provide the game APIs.
+Open http://127.0.0.1:4320/news-design.html. Live play uses Reactor for the video stream and fal's OpenRouter endpoint for Gemini photo scoring. Keys stay on the local development server. The server is intended for local use; a static build alone does not provide the game APIs.
 
 ```sh
 npm run test:newsworthy

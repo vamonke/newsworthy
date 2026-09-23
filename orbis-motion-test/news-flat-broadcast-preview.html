@@ -165,7 +165,7 @@
 </main><script type="module">
 import { EVENTS } from '/newsworthy-events.js';
 const options = document.querySelector('#event-options');
-for (const event of EVENTS) { const button = document.createElement('button'); const [emoji,...words]=event.label.split(' '); const icon=document.createElement('span'); icon.className='event-icon'; icon.textContent=emoji; icon.setAttribute('aria-hidden','true'); const label=document.createElement('span'); label.textContent=words.join(' '); button.append(icon,label); options.append(button); }
+for (const event of EVENTS) { const button = document.createElement('button'); const icon=document.createElement('span'); icon.className='event-icon'; icon.textContent=event.code; icon.setAttribute('aria-hidden','true'); const label=document.createElement('span'); label.textContent=event.label; button.append(icon,label); options.append(button); }
 
 document.querySelector('#custom').addEventListener('submit', e=>e.preventDefault());
 document.querySelector('#sound').addEventListener('click', e=>{const on=e.currentTarget.getAttribute('aria-pressed')!=='true';e.currentTarget.setAttribute('aria-pressed',String(on));e.currentTarget.textContent=on?'SOUND ON':'SOUND OFF';});
