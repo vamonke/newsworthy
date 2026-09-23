@@ -18,7 +18,6 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .masthead,
 .event-desk,
 .roll,
-dialog,
 .photo {
   background-color: var(--wire-paper);
   background-image: linear-gradient(rgba(222,229,228,.52), rgba(222,229,228,.52)), var(--wire-texture);
@@ -279,9 +278,6 @@ dialog,
 .roll .photo-meta:empty { display: none; }
 .roll-footer { padding: 0 13px; display: flex; align-items: center; justify-content: space-between; border-top: 3px solid var(--wire-ink); font: 800 8px/1 monospace; }
 .roll-footer strong { color: var(--wire-money); font: 950 24px/1 'Barlow Condensed',Impact,sans-serif; }
-
-dialog { color: var(--wire-ink); border: 0; border-top: 0; box-shadow: 10px 12px 0 rgba(0,0,0,.35), 0 24px 70px rgba(0,0,0,.5); }
-dialog::backdrop { background: rgba(4,8,8,.82); backdrop-filter: blur(2px); }
 
 @media (max-width: 1150px) {
   .workspace { grid-template-columns: 205px minmax(0,1fr) 215px; }
