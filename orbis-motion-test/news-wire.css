@@ -54,8 +54,13 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .masthead #high-scores { justify-self: end; padding: 5px 7px; color: var(--wire-ink); background: transparent; border: 1px solid var(--wire-ink); font: 800 8px/1 Barlow,Arial,sans-serif; }
 
 .workspace {
+  --side-min: 300px;
   display: grid;
-  grid-template-columns: clamp(220px,17vw,280px) minmax(0,1fr) clamp(230px,18vw,300px);
+  /* One sidebar (incidents over photos) on the left; the stream takes the rest at exactly 16:9. */
+  grid-template-columns: minmax(var(--side-min),1fr) auto;
+  grid-template-rows: minmax(0,1fr) auto;
+  grid-template-areas: "desk feed" "roll feed";
+  container-type: size;
   gap: 5px;
   flex: 1;
   min-height: 0;
@@ -64,6 +69,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 }
 
 .event-desk {
+  grid-area: desk;
   position: relative;
   width: auto;
   min-width: 0;
@@ -93,7 +99,9 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .event-desk h2 small i { width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: var(--wire-red); }
 .event-desk .incidents {
   min-height: 0;
-  display: block;
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-auto-rows: minmax(54px,1fr);
   overflow: auto;
   scrollbar-width: thin;
 }
@@ -101,28 +109,33 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   position: relative;
   isolation: isolate;
   width: 100%;
-  min-height: 41px;
-  padding: 0 10px;
-  display: grid;
-  grid-template-columns: 31px 29px minmax(0,1fr);
+  min-height: 56px;
+  padding: 7px 5px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0;
+  justify-content: center;
+  gap: 5px;
   overflow: hidden;
   color: var(--wire-ink);
   background: transparent;
   border: 0;
+  border-right: 1px solid #c7c0b0;
   border-bottom: 1px solid #c7c0b0;
   font-size: inherit;
-  text-align: left;
+  text-align: center;
 }
+.event-desk .incidents button:nth-child(2n) { border-right: 0; }
+.event-desk .incidents button:last-child:nth-child(odd) { grid-column: 1 / -1; border-right: 0; }
+.event-desk .event-number { display: none; }
 .event-desk .incidents button:hover:not(:disabled) { color: var(--wire-ink); background: rgba(255,255,255,.38); }
 .event-desk .incidents button:focus-visible { z-index: 2; }
 .event-desk .incidents button:disabled { color: #686a64; opacity: 1; }
 .event-desk .incidents button.event-cooling { color: var(--wire-ink); }
 .event-desk .incidents button.event-cooling::before { inset: 0 0 0 auto; width: var(--cooldown-fill,100%); background: rgba(214,40,37,.16); z-index: -1; }
-.event-icon { flex: none; width: auto; font: 900 8px/1 'SFMono-Regular',Consolas,monospace; text-align: left; }
+.event-icon { flex: none; width: auto; font: 900 9px/1 'SFMono-Regular',Consolas,monospace; text-align: left; }
 .event-number { font: 500 9px/1 'SFMono-Regular',Consolas,monospace; }
-.event-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 850 12px/1 Barlow,Arial,sans-serif; text-transform: uppercase; letter-spacing: .2px; }
+.event-label { max-width: 100%; overflow-wrap: anywhere; font: 850 15px/1.05 Barlow,Arial,sans-serif; text-transform: uppercase; letter-spacing: .2px; }
 #event-playing {
   position: absolute;
   z-index: 8;
@@ -155,6 +168,12 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .event-desk #restart { margin: 0 10px 10px; padding: 8px; color: var(--wire-ink)!important; background: transparent; border: 1px solid #807b70; font: 800 9px/1 Barlow,Arial,sans-serif; }
 
 .broadcast {
+  /* Width that fits beside the sidebar and within the height; the stage below the banner is then 16:9. */
+  --feed-w: min(calc(100cqw - var(--side-min) - 5px), calc((100cqh - 101px) * 16 / 9 + 2px));
+  grid-area: feed;
+  align-self: center;
+  width: var(--feed-w);
+  height: calc((var(--feed-w) - 2px) * 9 / 16 + 101px);
   position: relative;
   min-width: 0;
   min-height: 0;
@@ -253,11 +272,13 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .ticker-pause { color: #cfd4d1; background: #0b1111; }
 
 .roll {
+  grid-area: roll;
+  container-type: inline-size;
   width: auto;
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-rows: 48px minmax(0,1fr) 48px;
+  grid-template-rows: 44px auto 44px;
   overflow: hidden;
   color: var(--wire-ink);
   border: 1px solid #343b39;
@@ -265,23 +286,25 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 }
 .roll-title { padding: 0 13px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--wire-line); font: 950 21px/1 'Barlow Condensed',Impact,sans-serif; letter-spacing: -.2px; }
 .roll-title b { color: var(--wire-ink); font: 700 9px/1 monospace; }
-#photos { min-height: 0; padding: 10px; overflow: auto; scrollbar-width: thin; }
+/* Tall enough for one row of two photos (newest first); older ones scroll. */
+#photos { height: calc((100cqw - 34px) / 2 * 9 / 16 + 58px); min-height: 0; padding: 8px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; align-content: start; overflow: auto; scrollbar-width: thin; }
+#photos:has(.empty) { display: block; }
 .roll .empty { height: 100%; padding: 0 14px; display: grid; align-content: center; justify-items: center; gap: 9px; color: #6c6d67; text-align: center; }
 .roll .empty > span { color: var(--wire-ink); font: 900 14px/1 'Barlow Condensed',Impact,sans-serif; }
 .roll .empty p { max-width: 22ch; margin: 0; font: 9px/1.45 monospace; }
-.roll .photo { position: relative; margin: 0 0 10px; padding: 7px; color: var(--wire-ink); border: 1px solid #9f9888; box-shadow: inset 0 0 18px rgba(70,55,30,.16), 0 1px 0 rgba(0,0,0,.2); }
-.roll-photo-image:has(.photo-meta:not(:empty))::after { content: 'SOLD'; position: absolute; z-index: 3; right: 7px; bottom: 7px; padding: 3px 5px; color: var(--wire-red); background: rgba(248,245,236,.85); border: 2px solid var(--wire-red); font: 950 16px/.9 'Barlow Condensed',Impact,sans-serif; transform: rotate(-8deg); pointer-events: none; }
+.roll .photo { position: relative; margin: 0; padding: 6px; color: var(--wire-ink); border: 1px solid #9f9888; box-shadow: inset 0 0 18px rgba(70,55,30,.16), 0 1px 0 rgba(0,0,0,.2); }
+.photo:not(.photo-unsold) .roll-photo-image:has(.photo-meta:not(:empty))::after { content: 'SOLD'; position: absolute; z-index: 3; right: 7px; bottom: 7px; padding: 3px 5px; color: var(--wire-red); background: rgba(248,245,236,.85); border: 2px solid var(--wire-red); font: 950 16px/.9 'Barlow Condensed',Impact,sans-serif; transform: rotate(-8deg); pointer-events: none; }
 .roll-photo-button { display: flex; flex-direction: column; width: 100%; padding: 0; color: var(--wire-ink); background: transparent; border: 0; text-align: left; }
 .roll-photo-image { position: relative; display: block; }
 .roll .photo img { width: 100%; aspect-ratio: 16/9; object-fit: cover; filter: saturate(.9) contrast(1.04); }
-.roll .photo h3 { order: 2; margin: 0; padding: 8px 1px 4px; color: var(--wire-ink); font: 900 12px/1.08 'Barlow Condensed',Impact,sans-serif; text-transform: uppercase; }
+.roll .photo h3 { order: 2; min-height: 2.16em; margin: 0; padding: 7px 1px 3px; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; box-sizing: content-box; color: var(--wire-ink); font: 900 12px/1.08 'Barlow Condensed',Impact,sans-serif; text-transform: uppercase; }
 .roll .photo-meta { position: absolute; right: 5px; bottom: 5px; margin: 0; padding: 4px 6px; color: white!important; background: rgba(11,17,17,.86); font: 900 18px/1 'Barlow Condensed',Impact,sans-serif!important; }
 .roll .photo-meta:empty { display: none; }
 .roll-footer { padding: 0 13px; display: flex; align-items: center; justify-content: space-between; border-top: 3px solid var(--wire-ink); font: 800 8px/1 monospace; }
 .roll-footer strong { color: var(--wire-money); font: 950 24px/1 'Barlow Condensed',Impact,sans-serif; }
 
 @media (max-width: 1150px) {
-  .workspace { grid-template-columns: 205px minmax(0,1fr) 215px; }
+  .workspace { --side-min: 260px; }
   .wire-tagline { font-size: 17px; }
   .wire-tools > small { display: none; }
   .masthead { grid-template-columns: auto 1fr auto; }
@@ -296,10 +319,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   .wire-tagline, .wire-tools > small, .header-links a { display: none; }
   .masthead .logo { font-size: 28px; }
   .brand-mark { width: 34px; height: 34px; margin-right: 8px; }
-  .workspace { display: flex; flex-wrap: wrap; padding: 4px; }
+  .workspace { display: flex; flex-wrap: wrap; padding: 4px; container-type: normal; }
   .broadcast { order: 1; width: 100%; height: 62vh; min-height: 430px; flex: none; }
-  .event-desk { order: 2; width: 100%; height: 590px; }
-  .roll { order: 3; width: 100%; height: 300px; }
+  .event-desk { order: 2; width: 100%; height: auto; }
+  .roll { order: 3; width: 100%; height: auto; }
   .lower-third .breaking { font-size: 17px; }
   .lower-third .headline h1 { font-size: 19px; }
 }

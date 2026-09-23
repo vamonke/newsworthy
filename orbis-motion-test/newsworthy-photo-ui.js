@@ -1,5 +1,5 @@
 export const dollars=n=>'$'+Number(n||0).toLocaleString();
-export function tintPhoto(node,value){node.style.setProperty('--photo-color',value>=750?'#dc382d':value>=500?'#f1ba39':value>=250?'#154bae':'#607286');node.style.setProperty('--photo-ink',value>=500&&value<750?'#432e00':'#fff');}
+export function tintPhoto(node,value){node.style.setProperty('--photo-color',value>=750?'#dc382d':value>=500?'#f1ba39':value>=250?'#154bae':'#607286');node.style.setProperty('--photo-ink',value>=500&&value<750?'#432e00':'#fff');node.classList.toggle('photo-unsold',!(value>0));}
 export function photoTitle(node,result,fallback='Not scored'){node.textContent=result?.headline||fallback;if(result?.repeat){const tag=document.createElement('span');tag.className='photo-repeat';tag.textContent='REPEAT';node.append(' ',tag);}}
 export function countMoney(node,value){
  node.getAnimations().forEach(animation=>animation.cancel());

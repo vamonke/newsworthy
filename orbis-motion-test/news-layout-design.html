@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Newsworthy — Layout options</title>
+<link rel="icon" href="/news-design/newsworthy-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;700;800;900&family=Barlow+Condensed:ital,wght@0,800;0,900;1,900&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root {
+    --ink: #101414; --ink-2: #1b2324; --paper: #e5e6e1; --paper-hi: #f1f2ee; --line: #9f9888;
+    --red: #d62825; --money: #087b50; --yellow: #f0c94d;
+    --texture: url('/news-design/wire-paper-texture.webp');
+    --cond: 'Barlow Condensed', Impact, sans-serif; --mono: 'Space Mono', monospace;
+    --bar: 46px; --mast: 64px; --banner: 99px; --pad: 5px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; background: var(--ink); font-family: Barlow, Arial, sans-serif; }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+
+  /* Mock-only switcher */
+  .switcher { height: var(--bar); display: flex; align-items: center; gap: 6px; padding: 0 12px; color: #d9dcd7; background: #0a0e0e; border-bottom: 1px solid #333b3a; position: relative; z-index: 50; }
+  .switcher strong { margin-right: 6px; font: 700 10px/1 var(--mono); letter-spacing: .08em; color: #fff; }
+  .switcher button { padding: 7px 10px; color: #d9dcd7; background: transparent; border: 1px solid #454d4c; font: 700 10px/1 var(--mono); }
+  .switcher button[aria-pressed="true"] { color: var(--ink); background: var(--yellow); border-color: var(--yellow); }
+  .metrics { margin-left: auto; font: 10px/1.3 var(--mono); text-align: right; white-space: nowrap; }
+  .metrics b { color: #35d69a; }
+  .metrics i { font-style: normal; color: #ef6c58; }
+
+  .paper { color: var(--ink); background-color: var(--paper); background-image: linear-gradient(rgba(229,230,225,.55), rgba(229,230,225,.55)), var(--texture); background-size: cover; background-blend-mode: normal, multiply; }
+
+  /* Masthead */
+  .masthead { height: var(--mast); display: flex; align-items: center; gap: 10px; padding: 0 18px; border-bottom: 3px solid var(--ink); }
+  .masthead img { width: 36px; height: 36px; }
+  .logo { font: 900 30px/.85 var(--cond); letter-spacing: -.6px; }
+  .logo span { color: var(--red); }
+  .masthead nav { margin-left: auto; display: flex; gap: 14px; align-items: center; font: 800 10px/1 Barlow, sans-serif; text-transform: uppercase; }
+  .masthead nav b { padding: 7px 9px; border: 1px solid var(--ink); }
+
+  /* Workspace: sizes set by layout() in px */
+  .workspace { position: relative; height: calc(100% - var(--bar) - var(--mast)); padding: var(--pad); display: grid; gap: var(--pad); background: var(--ink); }
+  .col { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: var(--pad); }
+  .main-col { justify-content: center; }
+
+  /* Panels */
+  .panel { min-height: 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #343b39; }
+  .panel-head { height: 44px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 13px; border-bottom: 1px solid var(--line); font: 900 20px/1 var(--cond); }
+  .panel-head small { font: 700 9px/1 var(--mono); color: var(--red); }
+  .incidents { flex: 1; min-height: 0; overflow: auto; }
+  .incident { width: 100%; display: flex; align-items: center; gap: 11px; padding: 0 13px; min-height: 41px; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid rgba(159,152,136,.6); text-align: left; }
+  .incident .code { width: 26px; font: 700 8px/1 var(--mono); color: #666861; }
+  .incident .name { font: 900 15px/1 var(--cond); text-transform: uppercase; }
+  .incident:hover { background: rgba(255,255,255,.35); }
+  .incidents.grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(54px, 1fr); }
+  .incidents.grid .incident { height: 100%; flex-direction: column; justify-content: center; gap: 5px; padding: 6px; text-align: center; border-right: 1px solid rgba(159,152,136,.6); }
+  .incidents.grid .incident:nth-child(2n) { border-right: 0; }
+  .incidents.grid .incident:last-child:nth-child(odd) { grid-column: 1 / -1; border-right: 0; }
+  .incidents.grid .incident .code { width: auto; font-size: 9px; }
+  .incidents.grid .incident .name { font-size: 17px; }
+  .custom { flex: none; padding: 10px 13px; border-top: 1px solid var(--line); }
+  .custom label { display: block; margin-bottom: 6px; font: 900 10px/1 Barlow, sans-serif; }
+  .custom div { display: flex; }
+  .custom input { flex: 1; min-width: 0; padding: 9px; border: 1px solid var(--line); background: rgba(255,255,255,.5); font: 10px/1 var(--mono); }
+  .custom button { width: 36px; color: #fff; background: var(--ink-2); border: 0; font-weight: 900; }
+  .end { margin: 0 13px 10px; padding: 7px; background: transparent; border: 1px solid #807b70; font: 800 9px/1 Barlow, sans-serif; }
+
+  /* Camera roll */
+  .roll-list { flex: 1; min-height: 0; overflow: auto; padding: 10px; display: grid; gap: 10px; align-content: start; }
+  .roll-list.two { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .roll-list.one-row { flex: none; }
+  .sold { position: absolute; right: 5px; top: 42%; padding: 2px 4px; color: var(--red); background: rgba(248,245,236,.85); border: 2px solid var(--red); font: 900 13px/.9 var(--cond); transform: rotate(-8deg); }
+  .photo { position: relative; }
+  .photo img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+  .photo h3 { margin: 5px 0 0; font: 900 12px/1.05 var(--cond); text-transform: uppercase; }
+  .photo .price { position: absolute; right: 4px; top: 4px; padding: 3px 5px; color: #fff; background: rgba(11,17,17,.86); font: 900 15px/1 var(--cond); }
+  .roll-list.two .photo h3 { font-size: 11px; }
+  .empty-slot { aspect-ratio: 4/3; border: 1px dashed #a39c8c; display: grid; place-items: center; font: 700 9px/1 var(--mono); color: #8a8578; }
+  .roll-foot { height: 44px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 13px; border-top: 3px solid var(--ink); font: 800 9px/1 var(--mono); }
+  .roll-foot strong { color: var(--money); font: 900 23px/1 var(--cond); }
+
+  /* Film strip */
+  .strip { flex: none; display: flex; align-items: stretch; border: 1px solid #343b39; }
+  .strip-label { flex: none; width: 118px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid var(--line); }
+  .strip-label b { font: 900 18px/1 var(--cond); }
+  .strip-label span { font: 700 9px/1.2 var(--mono); }
+  .strip-label strong { color: var(--money); font: 900 24px/1 var(--cond); }
+  .strip-frames { flex: 1; min-width: 0; display: flex; gap: 7px; padding: 8px; overflow-x: auto; }
+  .strip-frames .photo, .strip-frames .empty-slot { flex: none; height: 100%; aspect-ratio: 4/3; }
+  .strip-frames .photo img { height: 100%; width: auto; aspect-ratio: 4/3; }
+  .strip-frames .photo h3 { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 14px 5px 4px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.75)); font-size: 11px; }
+
+  /* Broadcast */
+  .broadcast { flex: none; position: relative; overflow: hidden; background: #111717; border: 1px solid #343b39; }
+  .stage { position: relative; overflow: hidden; background: #0b1010; }
+  .stage img.feed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .stage .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6,10,10,.2), transparent 25%, transparent 70%, rgba(6,10,10,.25)); }
+  .onair { position: absolute; top: 12px; left: 12px; display: flex; }
+  .onair b { padding: 8px 11px; color: #fff; background: var(--red); font: 900 15px/1 var(--cond); }
+  .onair span { display: grid; place-items: center; padding: 0 10px; color: #fff; background: rgba(11,18,18,.88); font: 700 8px/1 var(--mono); }
+  .stats { position: absolute; top: 12px; right: 12px; display: flex; color: #fff; background: rgba(11,18,18,.9); border-bottom: 3px solid var(--red); }
+  .stats > * { padding: 6px 11px; }
+  .stats > * + * { border-left: 1px solid #65706e; }
+  .stats small { display: block; margin-bottom: 3px; font: 700 7px/1 var(--mono); }
+  .stats strong { font: 800 23px/1 var(--mono); }
+  .stats .money strong { color: #35d69a; }
+  .stats button { color: #fff; background: transparent; border: 0; border-left: 1px solid #65706e; text-align: left; }
+  .stats button strong::after { content: ' ▸'; font-size: 13px; color: var(--yellow); }
+  .viewfinder { position: absolute; left: 50%; top: 48%; width: 34%; aspect-ratio: 4/3; transform: translate(-50%,-50%); border: 1px solid rgba(255,255,255,.7); }
+  .viewfinder i { position: absolute; width: 20px; height: 20px; border: 0 solid #fff; }
+  .viewfinder i:nth-child(1) { left: -2px; top: -2px; border-width: 4px 0 0 4px; }
+  .viewfinder i:nth-child(2) { right: -2px; top: -2px; border-width: 4px 4px 0 0; }
+  .viewfinder i:nth-child(3) { left: -2px; bottom: -2px; border-width: 0 0 4px 4px; }
+  .viewfinder i:nth-child(4) { right: -2px; bottom: -2px; border-width: 0 4px 4px 0; }
+  .bars-note { position: absolute; left: 0; right: 0; display: grid; place-items: center; color: #ef6c58; font: 700 9px/1 var(--mono); letter-spacing: .05em; background: repeating-linear-gradient(45deg, rgba(239,108,88,.1) 0 6px, transparent 6px 12px); }
+  .lower-third { height: 64px; display: grid; grid-template-columns: auto minmax(0,1fr); background: var(--paper-hi); border-top: 3px solid var(--ink); }
+  .lower-third .breaking { display: grid; place-items: center; padding: 0 14px; color: #fff; background: var(--red); font: italic 900 21px/1 var(--cond); }
+  .lower-third h1 { margin: 0; padding: 0 14px; align-self: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 900 25px/1 var(--cond); text-transform: uppercase; }
+  .ticker { height: 35px; display: flex; align-items: center; gap: 12px; padding: 0 12px; overflow: hidden; color: #fff; background: #0b1111; border-top: 1px solid #56605e; font: 9px/1 var(--mono); white-space: nowrap; }
+  .ticker b { font-size: 12px; }
+  .ticker i { color: var(--red); font-style: normal; }
+
+  /* Drawer (option E) */
+  .drawer { position: absolute; top: var(--pad); bottom: var(--pad); right: var(--pad); width: 300px; display: flex; flex-direction: column; box-shadow: -14px 0 30px rgba(0,0,0,.45); transform: translateX(calc(100% + 20px)); transition: transform .28s cubic-bezier(.16,1,.3,1); z-index: 20; }
+  .drawer.open { transform: none; }
+  .drawer .panel-head button { background: transparent; border: 1px solid var(--ink); padding: 4px 7px; font: 800 9px/1 Barlow, sans-serif; }
+  .toast { position: absolute; right: 12px; top: 64px; width: 150px; padding: 5px; box-shadow: 3px 3px 0 rgba(0,0,0,.4); border: 2px solid var(--ink); }
+  .toast img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+  .toast p { margin: 4px 0 0; display: flex; justify-content: space-between; font: 900 12px/1 var(--cond); text-transform: uppercase; }
+  .toast p b { color: var(--money); }
+
+  /* Explainer card */
+  .explain { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 40; width: min(760px, calc(100vw - 32px)); padding: 12px 16px 13px; border: 2px solid var(--ink); box-shadow: 5px 5px 0 rgba(0,0,0,.45); }
+  .explain h2 { margin: 0 0 5px; font: 900 21px/1 var(--cond); text-transform: uppercase; }
+  .explain p { margin: 0; font: 11px/1.5 var(--mono); }
+  .explain .pc { margin-top: 7px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font: 10px/1.45 var(--mono); }
+  .explain .pc b { display: block; margin-bottom: 2px; font: 900 11px/1 Barlow, sans-serif; text-transform: uppercase; }
+  .explain .pc div:first-child b { color: var(--money); }
+  .explain .pc div:last-child b { color: var(--red); }
+  .explain .hide { position: absolute; top: 8px; right: 10px; background: none; border: 0; font: 700 10px/1 var(--mono); }
+  body.hide-explain .explain { display: none; }
+</style>
+</head>
+<body>
+<div class="switcher">
+  <strong>LAYOUT MOCK</strong>
+  <button data-layout="now">Now</button>
+  <button data-layout="narrow">A · Narrower stream</button>
+  <button data-layout="strip">B · Photos under stream</button>
+  <button data-layout="sidebar">C · One sidebar</button>
+  <button data-layout="drawer">D · Photos in a drawer</button>
+  <div class="metrics" id="metrics"></div>
+</div>
+<header class="masthead paper"><img src="/news-design/newsworthy-mark.svg" alt=""><div class="logo">NEWS<span>WORTHY</span></div><nav><span>How to play</span><span>About</span><span>GitHub</span><b>High scores</b></nav></header>
+<main class="workspace" id="workspace"></main>
+<section class="explain paper" id="explain"><button class="hide" id="hide-explain">HIDE ✕</button><h2></h2><p></p><div class="pc"><div><b>Good</b><span></span></div><div><b>Watch out</b><span></span></div></div></section>
+
+<script>
+const INCIDENTS = [['UFO','Aliens'],['MET','Meteor crash'],['MON','Flying monster'],['FWK','Fireworks'],['RNB','Rainbow'],['BAL','Red balloon'],['DUK','Rubber duck'],['DNT','Giant doughnut'],['AIR','Plane crash']];
+const PHOTOS = [
+  ['/news-judge/spectacle.jpg','UFO over city hall','$950'],
+  ['/news-design/live-marshmallow.jpg','Marshmallow flood','$0'],
+  ['/news-design/live-dinosaur.jpg','Dinosaur on Main St','$600'],
+  ['/news-judge/incident.jpg','Fire closes freeway','$300'],
+];
+const INFO = {
+  now: ['Now', 'Three columns. The feed column is taller than 16:9, so the video gets dark bars above and below it (striped).', 'Nothing to change.', 'The bars and the right panel take space the video could use.'],
+  narrow: ['A · Narrower stream', 'Same three columns, but the stream is sized to exactly 16:9. The side panels take whatever width is left.', 'Smallest change. No bars, and the video gets a little bigger because the side panels shrink to fit.', 'Still three columns. On wide screens the side panels get very wide and mostly empty.'],
+  strip: ['B · Photos under the stream', 'The right panel goes away. Your photos sit in a row under the stream. The incidents panel takes the remaining width.', 'Uses the space that was bars. You see new photos land right under where you aimed.', 'On laptop screens height is the limit, so the row makes the video smaller than today. The incidents panel ends up mostly empty.'],
+  sidebar: ['C · One sidebar (chosen)', 'One column on the left: the city changes as large two-column tiles that fill the height, and your newest two photos below. The stream takes all the remaining width at 16:9.', 'One of the two biggest videos. The city changes, which you use constantly, get most of the side space.', 'Only two photos are visible at once. Older ones scroll.'],
+  drawer: ['D · Photos in a drawer', 'Photos are hidden by default. A counter in the scoreboard opens a drawer, and each new photo pops up briefly in the corner.', 'Large video and a roomy incidents panel. Photos appear only when you want them.', 'Photos are out of sight, so selling a photo feels less rewarding unless the pop-up is good.'],
+};
+
+let layoutName = 'now', drawerOpen = false;
+const $ = s => document.querySelector(s);
+try { layoutName = localStorage.getItem('nw-layout') || 'now'; } catch {}
+
+const incidentsPanel = (grid=false) => `<section class="panel paper" style="flex:1"><div class="panel-head"><span>CHANGE THE CITY</span><small>● LIVE</small></div><div class="incidents${grid ? ' grid' : ''}">${INCIDENTS.map(([c,n]) => `<button class="incident"><span class="code">${c}</span><span class="name">${n}</span></button>`).join('')}</div><div class="custom"><label>＋ YOUR OWN IDEA</label><div><input placeholder="Describe a news event…"><button>→</button></div></div><button class="end">END ROUND</button></section>`;
+const photoCard = ([src,title,price]) => `<div class="photo"><img src="${src}" alt=""><span class="price">${price}</span>${price === '$0' ? '' : '<span class="sold">SOLD</span>'}<h3>${title}</h3></div>`;
+const rollPanel = (two=false, style='flex:1', oneRow=false) => `<section class="panel paper" style="${style}"><div class="panel-head"><span>YOUR PHOTOS</span><small style="color:var(--ink)">4 / 12</small></div><div class="roll-list${two ? ' two' : ''}${oneRow ? ' one-row' : ''}">${PHOTOS.map(photoCard).join('')}</div><div class="roll-foot"><span>EARNINGS</span><strong>$1,850</strong></div></section>`;
+const strip = h => `<section class="strip paper" style="height:${h}px"><div class="strip-label"><b>YOUR PHOTOS</b><span>4 / 12 TAKEN</span><strong>$1,850</strong></div><div class="strip-frames">${PHOTOS.map(photoCard).join('')}${'<div class="empty-slot">EMPTY</div>'.repeat(8)}</div></section>`;
+const broadcast = (w, h, stageH, drawerButton=false) => {
+  const vid = Math.min(w, stageH * 16/9), vh = vid * 9/16, bar = (stageH - vh) / 2;
+  const bars = bar > 2 ? `<div class="bars-note" style="top:0;height:${bar}px">BLACK BARS · ${Math.round(bar)}px</div><div class="bars-note" style="bottom:0;height:${bar}px">BLACK BARS · ${Math.round(bar)}px</div>` : '';
+  const photos = drawerButton ? `<button id="open-drawer"><small>PHOTOS</small><strong>4/12</strong></button>` : '';
+  return `<section class="broadcast" style="width:${w}px"><div class="stage" style="height:${stageH}px"><img class="feed" src="/news-judge/busy-opening-ufo-v4.png" alt="Live city camera"><div class="shade"></div>${bars}<div class="onair"><b>● LIVE</b><span>CHOPPER 01</span></div><div class="stats"><div><small>TIME LEFT</small><strong>1:08</strong></div><div class="money"><small>EARNINGS</small><strong>$1,850</strong></div>${photos}</div><div class="viewfinder"><i></i><i></i><i></i><i></i></div>${drawerButton ? `<div class="toast paper"><img src="${PHOTOS[0][0]}" alt=""><p>Photo sold <b>+$950</b></p></div>` : ''}</div><div class="lower-third"><div class="breaking">BREAKING</div><h1>UFO seen over Orbis City</h1></div><div class="ticker"><b>WIRE ▸</b>BUILT BY VARICK <i>•</i> POWERED BY REACTOR <i>•</i> YOU MAKE THE CHAOS. WE MAKE THE HEADLINES.</div></section>`;
+};
+
+function render() {
+  const ws = $('#workspace'), P = 5, B = 99;
+  const W = innerWidth, H = ws.clientHeight;
+  const innerW = W - 2*P, innerH = H - 2*P;
+  let cols, html, stageW, stageH;
+  const fit = (maxW, maxH) => { const w = Math.floor(Math.min(maxW, maxH * 16/9)); return [w, Math.floor(w * 9/16)]; };
+
+  if (layoutName === 'now') {
+    const l = Math.min(280, Math.max(220, .17*W)), r = Math.min(300, Math.max(230, .18*W));
+    stageW = innerW - l - r - 2*P; stageH = innerH - B;
+    cols = `${l}px ${stageW}px ${r}px`;
+    html = `<div class="col">${incidentsPanel()}</div><div class="col main-col" style="justify-content:stretch">${broadcast(stageW, stageH, stageH)}</div><div class="col">${rollPanel()}</div>`;
+  } else if (layoutName === 'narrow') {
+    [stageW, stageH] = fit(innerW - 2*(220 + P), innerH - B);
+    const side = (innerW - stageW - 2*P) / 2;
+    cols = `${side}px ${stageW}px ${side}px`;
+    html = `<div class="col">${incidentsPanel()}</div><div class="col main-col">${broadcast(stageW, stageH, stageH)}</div><div class="col">${rollPanel(side > 330)}</div>`;
+  } else if (layoutName === 'strip') {
+    const stripH = Math.max(112, Math.min(150, innerH * .17));
+    [stageW, stageH] = fit(innerW - 250 - P, innerH - B - stripH - P);
+    cols = `${innerW - stageW - P}px ${stageW}px`;
+    html = `<div class="col">${incidentsPanel()}</div><div class="col main-col">${broadcast(stageW, stageH, stageH)}${strip(stripH)}</div>`;
+  } else if (layoutName === 'sidebar') {
+    [stageW, stageH] = fit(innerW - 300 - P, innerH - B);
+    const side = innerW - stageW - P;
+    cols = `${side}px ${stageW}px`;
+    html = `<div class="col">${incidentsPanel(true)}${rollPanel(true, 'flex:none', true)}</div><div class="col main-col">${broadcast(stageW, stageH, stageH)}</div>`;
+  } else {
+    [stageW, stageH] = fit(innerW - 250 - P, innerH - B);
+    cols = `${innerW - stageW - P}px ${stageW}px`;
+    html = `<div class="col">${incidentsPanel()}</div><div class="col main-col">${broadcast(stageW, stageH, stageH, true)}</div><aside class="drawer paper${drawerOpen ? ' open' : ''}" id="drawer"><div class="panel-head"><span>YOUR PHOTOS · 4/12</span><button id="close-drawer">CLOSE ✕</button></div><div class="roll-list">${PHOTOS.map(photoCard).join('')}</div><div class="roll-foot"><span>EARNINGS</span><strong>$1,850</strong></div></aside>`;
+  }
+  ws.style.gridTemplateColumns = cols;
+  ws.innerHTML = html;
+  // Option C: photos show one row (newest two); older ones scroll.
+  const oneRow = ws.querySelector('.one-row');
+  if (oneRow) oneRow.style.height = oneRow.querySelector('.photo').offsetHeight + 20 + 'px';
+
+  const [vw] = fit(stageW, stageH), vh = vw * 9/16;
+  const share = vw * vh / (W * innerHeight) * 100;
+  const wasted = stageW * stageH - vw * vh;
+  $('#metrics').innerHTML = `Video <b>${vw}×${Math.round(vh)}</b> · <b>${share.toFixed(0)}%</b> of window` + (wasted > stageW * 4 ? ` · <i>black bars ${Math.round(stageH - vh)}px</i>` : ' · no black bars');
+  document.querySelectorAll('[data-layout]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.layout === layoutName)));
+  const [t, d, good, bad] = INFO[layoutName];
+  $('#explain h2').textContent = t; $('#explain p').textContent = d;
+  const spans = document.querySelectorAll('#explain .pc span'); spans[0].textContent = good; spans[1].textContent = bad;
+  $('#open-drawer')?.addEventListener('click', () => { drawerOpen = true; $('#drawer').classList.add('open'); });
+  $('#close-drawer')?.addEventListener('click', () => { drawerOpen = false; $('#drawer').classList.remove('open'); });
+}
+
+document.querySelectorAll('[data-layout]').forEach(b => b.addEventListener('click', () => {
+  layoutName = b.dataset.layout; drawerOpen = false;
+  try { localStorage.setItem('nw-layout', layoutName); } catch {}
+  render();
+}));
+$('#hide-explain').addEventListener('click', () => document.body.classList.add('hide-explain'));
+addEventListener('resize', render);
+render();
+</script>
+</body>
+</html>
