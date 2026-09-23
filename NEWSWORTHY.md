@@ -9,11 +9,15 @@ Requires Node.js 20.19+ (or 22.12+) and npm.
 ```sh
 npm ci
 cp .env.example .env.local
-# Set REACTOR_API_KEY and FAL_KEY in .env.local.
+# Set REACTOR_API_KEY and GEMINI_API_KEY in .env.local.
 npm run dev:newsworthy
 ```
 
-Open http://127.0.0.1:4320/news-design.html. Live play uses Reactor for the video stream and fal's OpenRouter endpoint for Gemini photo scoring. Keys stay on the local development server. The server is intended for local use; a static build alone does not provide the game APIs.
+Open http://127.0.0.1:4320/news-design.html. Live play uses Reactor for the video stream and Gemini for photo scoring. Keys stay on the local development server, which allows one live session at a time.
+
+## Production
+
+The game is live at https://newsworthy.vamonke.com, served by a Cloudflare Worker in `worker/` with live slots, a waiting line and a Turnstile bot check. See [DEPLOYMENT.md](DEPLOYMENT.md) for the architecture, deploy steps, secrets, limits and how to take it down.
 
 ```sh
 npm run test:newsworthy
@@ -42,6 +46,6 @@ Create focused commits as changes are made. Git history begins with the current 
 
 Inspired by Nicky Case’s “We Become What We Behold”: https://ncase.itch.io/wbwwb
 
-Sound credits and their source/license links are preserved in the game and audio asset folder. Live video uses Reactor / Visko Orbis. Photo judging uses fal’s model API.
+Sound credits and their source/license links are preserved in the game and audio asset folder. Live video uses Reactor / Visko Orbis. Photo judging uses Google’s Gemini API.
 
 The repository is private while preparing for an eventual open-source release. No project-wide open-source license has been selected yet.

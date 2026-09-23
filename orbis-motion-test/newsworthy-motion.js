@@ -11,8 +11,10 @@ export function installDialogMotion(dialog){
  dialog.addEventListener('submit',e=>{if(e.target.method==='dialog'){e.preventDefault();dialog.close(e.submitter?.value);}});
 }
 export function shutter(node){
- if(reduced())return Promise.resolve();
- return node.animate([{opacity:0,offset:0},{opacity:.95,offset:.22},{opacity:.95,offset:.4},{opacity:0,offset:1}],{duration:200,easing:'ease-out'}).finished.catch(()=>{});
+ if(reduced()||document.hidden)return Promise.resolve();
+ const flash=node.animate([{opacity:0,offset:0},{opacity:.95,offset:.22},{opacity:.95,offset:.4},{opacity:0,offset:1}],{duration:200,easing:'ease-out'});
+ // Browsers pause animations in hidden or covered windows, and the photo is only sent once this settles.
+ return Promise.race([flash.finished.catch(()=>{}),new Promise(done=>setTimeout(done,300))]);
 }
 export function revealRecap(dialog,total){
  const cards=[...dialog.querySelectorAll('.recap-card')],number=dialog.querySelector('#final-total');
