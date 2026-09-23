@@ -4,7 +4,7 @@ let sound = true;
 const buffers = new Map();
 const loading = new Map();
 const active = new Set();
-const clips = { shutter: 'wbwwb/cam_snap.mp3', news: 'wbwwb/breaking_news.mp3', count: 'money-counter.m4a' };
+const clips = { shutter: 'wbwwb/cam_snap.mp3', news: 'wbwwb/breaking_news.mp3', wrap: 'wrap-stinger.m4a' };
 const loadingClip = '/audio/helicopter-midflight-interior.m4a';
 let loadingAudio;
 
@@ -66,8 +66,14 @@ function play(name, volume) {
 }
 export function shutterSound() { play('shutter', .7); }
 export function moneySound() { play('news', .45); }
-// Trimmed to 1.2s; the recap count-up runs for the same length (COUNT_MS in newsworthy-motion.js).
-export function countSound() { play('count', .6); }
-export function stopCountSound() { for (const source of active) if (source.clipName === 'count') source.stop(); }
+// End-of-round stinger. Returns a clock (ms since it started) so the results reveal stays on the music's hits,
+// or null when it can't play (sound off, not loaded yet, or audio suspended); the reveal then uses wall time.
+export function wrapSound() {
+  if (!sound || !buffers.has('wrap') || audio?.state !== 'running') return null;
+  play('wrap', .7);
+  const startedAt = audio.currentTime;
+  return () => (audio.currentTime - startedAt) * 1000;
+}
+export function stopWrapSound() { for (const source of active) if (source.clipName === 'wrap') source.stop(); }
 
 export async function preloadSounds() { context(); await Promise.all(Object.keys(clips).map(load)); }
