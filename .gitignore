@@ -1,6 +1,7 @@
 # Track only Newsworthy within this shared experimental workspace.
 /*
 !/.gitignore
+!/AGENTS.md
 !/package.json
 !/package-lock.json
 !/.env.example
@@ -39,6 +40,7 @@
 **/runs/
 **/*.log
 **/.DS_Store
+/.codex-work/
 
 !orbis-motion-test/news-flat.css
 
