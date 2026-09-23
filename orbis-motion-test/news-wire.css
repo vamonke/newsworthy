@@ -306,6 +306,16 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .roll .photo h3 { order: 2; min-height: 2.16em; margin: 0; padding: 7px 1px 3px; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; box-sizing: content-box; color: var(--wire-ink); font: 900 12px/1.08 'Barlow Condensed',Impact,sans-serif; text-transform: uppercase; }
 .roll .photo-meta { position: absolute; right: 5px; bottom: 5px; margin: 0; padding: 4px 6px; color: white!important; background: rgba(11,17,17,.86); font: 900 18px/1 'Barlow Condensed',Impact,sans-serif!important; }
 .roll .photo-meta:empty { display: none; }
+/* Card states for the photo review: small eye while reviewing, grey when it failed, a pulse when the price lands */
+.roll .photo .review-eye { display: none; position: absolute; z-index: 2; left: 50%; top: 50%; width: 46%; max-width: 70px; transform: translate(-50%,-50%); filter: drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
+.roll .photo.reviewing .review-eye { display: block; }
+.roll .photo.reviewing img { filter: grayscale(.55) brightness(.7); }
+.roll .photo.reviewing h3 { color: var(--wire-muted); }
+.roll .photo.failed img { filter: grayscale(1) brightness(.6); }
+.roll .photo.landed { animation: card-land .9s ease-out; }
+@keyframes card-land { 25% { transform: scale(1.05); box-shadow: 0 0 0 3px var(--wire-money); } }
+.money-bump { display: inline-block; animation: money-bump .5s ease-out; }
+@keyframes money-bump { 40% { transform: scale(1.18); } }
 .roll-footer { padding: 0 13px; display: flex; align-items: center; justify-content: space-between; border-top: 3px solid var(--wire-ink); font: 800 8px/1 monospace; }
 .roll-footer strong { color: var(--wire-money); font: 950 24px/1 'Barlow Condensed',Impact,sans-serif; }
 

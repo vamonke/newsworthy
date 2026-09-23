@@ -17,9 +17,9 @@ async function body(req, limit = 1024 * 1024) {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, workspace, '');
   const apiKey = env.REACTOR_API_KEY;
-  const falKey = env.FAL_KEY || env.FAL_API_KEY;
+  const geminiKey = env.GEMINI_API_KEY;
   // Only sessions registered with the short-lived JWT issued by this test.
-  const newsJudge = createNewsJudge(falKey);
+  const newsJudge = createNewsJudge(geminiKey);
   const sessions = new Map();
   const issued = new Set();
   async function cleanup(id, jwt) {
