@@ -8,6 +8,7 @@ import { MODEL } from './prompts.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const workspace = resolve(root, '..');
+const SESSION_MAX_SECONDS = 360;
 const send = (res, status, body) => { res.statusCode = status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(body)); };
 async function body(req, limit = 1024 * 1024) {
   const chunks = []; let size = 0;
@@ -53,7 +54,7 @@ export default defineConfig(({ mode }) => {
               if (sessions.size) return send(res, 409, { error: 'Another live session is still open. Stop it before starting another.' });
               const reply = await fetch('https://api.reactor.inc/tokens', {
                 method: 'POST', headers: { 'Reactor-API-Key': apiKey, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ authorization_details: [{ type: 'session', resources: { models: { match: [MODEL] } }, constraints: { max_sessions: 1, max_session_duration_seconds: 900 } }] }),
+                body: JSON.stringify({ authorization_details: [{ type: 'session', resources: { models: { match: [MODEL] } }, constraints: { max_sessions: 1, max_session_duration_seconds: SESSION_MAX_SECONDS } }] }),
                 signal: AbortSignal.timeout(20000),
               });
               const value = await reply.json();
@@ -64,10 +65,12 @@ export default defineConfig(({ mode }) => {
             }
             if (path === '/session' || path === '/cleanup') {
               const { sessionId, jwt } = JSON.parse(await body(req, 20000));
-              if (typeof sessionId !== 'string' || sessionId.length > 200 || !issued.has(jwt)) return send(res, 400, { error: 'Unknown test session' });
+              const validSessionId=typeof sessionId==='string'&&sessionId.length>0&&sessionId.length<=200;
+              const validJwt=typeof jwt==='string'&&jwt.length<=10000&&jwt.split('.').length===3;
+              if (!validSessionId||!validJwt||(path==='/session'&&!issued.has(jwt))) return send(res, 400, { error: 'Unknown test session' });
               if (path === '/cleanup') { await cleanup(sessionId, jwt); return send(res, 200, { stopped: true }); }
               if (!sessions.has(sessionId)) {
-                const timer = setTimeout(() => cleanup(sessionId, jwt).catch(() => {}), 14 * 60 * 1000); timer.unref();
+                const timer = setTimeout(() => cleanup(sessionId, jwt).catch(() => {}), SESSION_MAX_SECONDS * 1000); timer.unref();
                 sessions.set(sessionId, { jwt, timer });
               }
               return send(res, 200, { registered: true });
