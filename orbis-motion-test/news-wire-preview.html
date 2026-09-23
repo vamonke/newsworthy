@@ -141,9 +141,9 @@
     .dispatch input { width: 100%; min-width: 0; border: 1px solid var(--line); padding: 10px; background: rgba(255,255,255,.44); color: var(--ink); font: 11px/1 var(--mono); }
     .dispatch button { border: 0; color: white; background: var(--ink-2); font-weight: 900; }
 
-    .broadcast { min-width: 0; min-height: 0; position: relative; overflow: hidden; background: #1a2222; border: 1px solid #303737; }
-    .city-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; pointer-events: none; }
-    .city-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,12,12,.22), transparent 24%, transparent 66%, rgba(7,12,12,.3)); pointer-events: none; }
+    .broadcast { --stack: 104px; min-width: 0; min-height: 0; position: relative; overflow: hidden; background: #1a2222; border: 1px solid #303737; }
+    .city-image { position: absolute; inset: 0 0 var(--stack); width: 100%; height: calc(100% - var(--stack)); object-fit: contain; user-select: none; pointer-events: none; }
+    .city-shade { position: absolute; inset: 0 0 var(--stack); background: linear-gradient(180deg, rgba(7,12,12,.22), transparent 24%, transparent 66%, rgba(7,12,12,.3)); pointer-events: none; }
     .live-id { position: absolute; top: 14px; left: 14px; display: flex; align-items: stretch; z-index: 4; }
     .live-id b { padding: 10px 13px; color: white; background: var(--red); font: 900 18px/1 var(--sans); }
     .live-id span { display: grid; place-items: center; padding: 0 12px; color: white; background: rgba(11,18,18,.88); font: 700 9px/1 var(--mono); }
@@ -342,6 +342,7 @@
       .photo-card img { aspect-ratio: 2/1; }
       .panel-head { height: 42px; }
       .incident-panel, .roll-panel { grid-template-rows: 42px minmax(0, 1fr) auto; }
+      .broadcast { --stack: 90px; }
       .lower-third { min-height: 55px; }
       .breaking { font-size: 21px; }
       .headline strong { font-size: 23px; }
@@ -570,7 +571,7 @@
       const rect = broadcast.getBoundingClientRect();
       const halfW = viewfinder.offsetWidth / 2;
       const halfH = viewfinder.offsetHeight / 2;
-      const lowerReserve = 110;
+      const lowerReserve = document.querySelector('.broadcast-stack').offsetHeight + 8;
       const x = Math.max(halfW + 8, Math.min(rect.width - halfW - 8, event.clientX - rect.left));
       const y = Math.max(halfH + 8, Math.min(rect.height - lowerReserve - halfH, event.clientY - rect.top));
       viewfinder.style.left = `${x}px`;

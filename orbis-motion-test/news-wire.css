@@ -164,8 +164,9 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   background: #111717;
   border: 1px solid #343b39;
 }
-.picture-stage { position: absolute; inset: 0; min-height: 0; overflow: hidden; cursor: crosshair; background: #111717; }
-.picture-stage #feed, .picture-stage #opening-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Ends where the lower third (64px) + ticker (35px) begin, so they never cover the feed. */
+.picture-stage { position: absolute; inset: 0 0 99px; min-height: 0; overflow: hidden; cursor: crosshair; background: #111717; }
+.picture-stage #feed, .picture-stage #opening-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .shade { background: linear-gradient(180deg,rgba(6,10,10,.2),transparent 25%,transparent 67%,rgba(6,10,10,.28)); }
 .on-air { top: 14px; left: 14px; display: flex; align-items: stretch; gap: 0; box-shadow: none; }
 .on-air b { padding: 10px 13px; color: white; background: var(--wire-red); font: 900 17px/1 'Barlow Condensed',Impact,sans-serif; }
@@ -188,7 +189,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .viewfinder > .shoot-hint { display: none!important; }
 .viewfinder .shot-count { top: -22px; right: 0; left: auto; padding: 0; color: white; background: transparent; font: 800 9px/1 monospace; text-shadow: 0 1px 3px #000; }
 .viewfinder .shot-count, .viewfinder .shot-count b, .viewfinder .shot-count span { font: 800 9px/1 monospace; }
-.capture-zone { z-index: 8; bottom: 112px; pointer-events: none; }
+.capture-zone { z-index: 8; bottom: 13px; pointer-events: none; }
 .capture-zone #notice { opacity: 0; margin: 0; padding: 0; }
 .capture-zone #notice.incoming { opacity: 1; max-width: 80%; padding: 9px 14px; color: var(--wire-ink); background: var(--wire-yellow); border: 2px solid var(--wire-ink); box-shadow: 3px 3px 0 rgba(0,0,0,.4); font: 900 17px/1.1 'Barlow Condensed',Impact,sans-serif; text-shadow: none; }
 #flash { z-index: 7; background: white; }
