@@ -13,7 +13,7 @@ async function readJson(request, limit) {
   return JSON.parse(text || '{}');
 }
 
-// Only enforced once TURNSTILE_SECRET is set; the game doesn't send a Turnstile token yet.
+// Cloudflare Turnstile. Enforced only when TURNSTILE_SECRET is set; /api/status then gives the game the site key.
 async function human(env, token, ip) {
   if (!env.TURNSTILE_SECRET) return true;
   if (typeof token !== 'string' || !token) return false;
@@ -27,7 +27,7 @@ async function api(request, env, path, ip) {
   const gate = env.GATE.get(env.GATE.idFromName('gate'));
   if (path === 'status' && request.method === 'GET') {
     const { active, slots } = await gate.status();
-    return reply(200, { configured: Boolean(env.REACTOR_API_KEY), model: MODEL, activeSessions: active, slots });
+    return reply(200, { configured: Boolean(env.REACTOR_API_KEY), model: MODEL, activeSessions: active, slots, turnstile: env.TURNSTILE_SECRET ? env.TURNSTILE_SITE_KEY : null });
   }
   if (request.method !== 'POST') return reply(405, { error: 'Method not allowed' });
   const origin = request.headers.get('Origin');
@@ -40,7 +40,7 @@ async function api(request, env, path, ip) {
     // ticket, so only a first request counts toward the new-round limit and needs the bot check.
     const ticket = typeof body.ticket === 'string' && body.ticket.length <= 64 ? body.ticket : null;
     if (!ticket && env.TOKEN_LIMITER && !(await env.TOKEN_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many new rounds. Wait a minute and try again.' });
-    if (!ticket && !(await human(env, body.turnstile, ip))) return reply(403, { error: 'Please complete the check and try again.' });
+    if (!ticket && !(await human(env, body.turnstile, ip))) return reply(403, { error: 'The bot check didn’t go through. Try again.' });
     const result = await gate.open(ip, ticket);
     if (result.jwt) return reply(200, { jwt: result.jwt });
     // This wording keeps the game's "stop the previous session" button working.
