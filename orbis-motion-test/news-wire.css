@@ -131,7 +131,8 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .event-desk .incidents button:hover:not(:disabled) { color: var(--wire-ink); background: rgba(255,255,255,.38); }
 .event-desk .incidents button:focus-visible { z-index: 2; }
 .event-desk .incidents button:disabled { color: #686a64; opacity: 1; }
-.event-icon { flex: none; width: auto; font: 900 9px/1 'SFMono-Regular',Consolas,monospace; text-align: left; }
+.event-icon { flex: none; width: 26px; height: 26px; }
+.event-desk .incidents button:hover:not(:disabled) .event-icon { color: var(--wire-red); }
 .event-number { font: 500 9px/1 'SFMono-Regular',Consolas,monospace; }
 .event-label { max-width: 100%; overflow-wrap: anywhere; font: 850 15px/1.05 Barlow,Arial,sans-serif; text-transform: uppercase; letter-spacing: .2px; }
 #event-timer {
@@ -159,17 +160,20 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .event-desk #custom {
   min-width: 0;
   margin: 0;
-  padding: 10px;
+  padding: 14px 14px 16px;
   display: grid;
-  grid-template-columns: minmax(0,1fr) 37px;
+  grid-template-columns: minmax(0,1fr);
   gap: 0;
   background: transparent;
   border: 0;
-  border-top: 3px solid var(--wire-ink);
+  border-top: 1px solid #8f8a7e;
 }
-.event-desk #custom label { grid-column: 1/-1; margin-bottom: 7px; color: var(--wire-ink); font: 900 11px/1 Barlow,Arial,sans-serif; letter-spacing: .2px; }
-.event-desk #idea { min-width: 0; padding: 9px; color: var(--wire-ink); background: rgba(255,255,255,.4); border: 1px solid var(--wire-line); font: 10px/1 monospace; }
-.event-desk #custom button { padding: 0; color: white; background: var(--wire-ink-2); border: 0; font: 900 17px/1 Barlow,Arial,sans-serif; }
+/* Big label, three-line box and a yellow send button nudge players to write their own scene */
+.event-desk #custom label { margin-bottom: 10px; color: var(--wire-ink); font: 900 19px/1 'Barlow Condensed',Impact,sans-serif; letter-spacing: .2px; }
+.event-desk #idea { min-width: 0; padding: 10px 11px; resize: none; color: var(--wire-ink); background: rgba(255,255,255,.4); border: 1px solid var(--wire-line); font: 500 15px/1.35 Barlow,Arial,sans-serif; scrollbar-width: thin; }
+.event-desk #idea::placeholder { color: #7d7b73; }
+.event-desk #custom button { margin-top: 10px; padding: 12px 12px 11px; color: var(--wire-ink); background: var(--wire-yellow); border: 0; font: 900 19px/1 'Barlow Condensed',Impact,sans-serif; letter-spacing: .8px; text-transform: uppercase; }
+.event-desk #custom button:hover:not(:disabled) { background: #dcae2e; }
 .event-history-panel { display: none; }
 .event-desk #restart { margin: 0 10px 10px; padding: 8px; color: var(--wire-ink)!important; background: transparent; border: 1px solid #807b70; font: 800 9px/1 Barlow,Arial,sans-serif; }
 

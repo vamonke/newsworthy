@@ -7,7 +7,7 @@ export const EVENTS=[
  {id:'octopus',code:'OCT',name:'Octopus',label:'Octopus',prompt:'A water tower on a rooftop bursts open and a giant purple octopus spills out. Its long tentacles slide down the side of the building and curl around the cars on the street below.'},
  {id:'gorilla',code:'GOR',name:'Gorilla',label:'Gorilla',prompt:'A giant black gorilla climbs up the side of the tallest building, gripping the windows with its huge hands. It stops near the top and beats its chest.'},
  {id:'robot',code:'BOT',name:'Robot',label:'Robot',prompt:'A big truck in the middle of the road unfolds into a giant robot. Its metal panels flip open, arms and legs swing out, and it rises up to stand taller than the buildings, its eyes glowing blue.'},
- {id:'balloon',code:'BAL',name:'Red balloon',label:'Red balloon',prompt:'A giant round red helium balloon floats above the intersection. Its glossy rubber surface and long dangling string are clearly visible.'},
+ {id:'balloon',code:'BAL',name:'Balloon',label:'Balloon',prompt:'A giant round red helium balloon floats above the intersection. Its glossy rubber surface and long dangling string are clearly visible.'},
  {id:'doughnut',code:'DNT',name:'Doughnut',label:'Doughnut',prompt:'A giant doughnut with pink icing and colorful sprinkles fills the intersection. Cars look tiny beside it.'},
  {id:'plane',code:'AIR',name:'Plane crash',label:'Plane crash',prompt:'A passenger plane crashes onto the broad city street. Broken wings and the aircraft body fill the road as flames and smoke rise around them.'},
 ];
