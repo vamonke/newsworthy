@@ -13,8 +13,8 @@ export function shutter(node){
  return node.animate([{opacity:0,offset:0},{opacity:.95,offset:.22},{opacity:.95,offset:.4},{opacity:0,offset:1}],{duration:200,easing:'ease-out'}).finished.catch(()=>{});
 }
 export function revealRecap(dialog,total){
- const cards=[...dialog.querySelectorAll('.recap-photo')],number=dialog.querySelector('#final-total');
- let rating=dialog.querySelector('.round-rating');if(!rating){rating=document.createElement('div');rating.className='round-rating';dialog.querySelector('.recap-top').after(rating);}
+ const cards=[...dialog.querySelectorAll('.recap-card')],number=dialog.querySelector('#final-total');
+ let rating=dialog.querySelector('.round-rating');if(!rating){rating=document.createElement('div');rating.className='round-rating';dialog.querySelector('.recap-head').after(rating);}
  rating.innerHTML='<div class="round-stars" role="img"></div><p class="star-message"></p>';
  const starRow=rating.querySelector('.round-stars');STAR_THRESHOLDS.forEach(threshold=>{const item=document.createElement('span');item.className='round-star';item.innerHTML='<span aria-hidden="true">★</span><small>$'+threshold.toLocaleString()+'</small>';starRow.append(item);});
  const updateStars=(value,animate=true)=>{const count=starsFor(value);starRow.setAttribute('aria-label',count+' of 3 stars');[...starRow.children].forEach((item,i)=>{if(i<count&&!item.classList.contains('earned')){item.classList.add('earned');if(animate&&!reduced())item.animate([{transform:'scale(.65)'},{transform:'scale(1.2)'},{transform:'scale(1)'}],{duration:360,easing:'ease-out'});}});};

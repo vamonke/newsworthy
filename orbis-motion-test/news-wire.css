@@ -19,8 +19,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .event-desk,
 .roll,
 dialog,
-.photo,
-.recap-photo {
+.photo {
   background-color: var(--wire-paper);
   background-image: linear-gradient(rgba(222,229,228,.52), rgba(222,229,228,.52)), var(--wire-texture);
   background-size: cover;
@@ -283,43 +282,6 @@ dialog,
 
 dialog { color: var(--wire-ink); border: 0; border-top: 0; box-shadow: 10px 12px 0 rgba(0,0,0,.35), 0 24px 70px rgba(0,0,0,.5); }
 dialog::backdrop { background: rgba(4,8,8,.82); backdrop-filter: blur(2px); }
-.wire-modal-label, .sale-label { padding: 10px 14px; display: flex; justify-content: space-between; color: white; background: var(--wire-ink); font: 800 9px/1 monospace; letter-spacing: .6px; }
-#welcome { width: min(500px,92vw); min-width: 0; max-height: 92dvh; padding: 0; overflow: auto; text-align: left; border: 0; }
-.welcome-layout { display: block; }
-.welcome-copy { padding: 34px; }
-.welcome-brand-lockup { margin: -4px 0 22px; display: flex; align-items: center; gap: 13px; }
-.welcome-brand-lockup > img { width: 78px; height: 78px; flex: 0 0 auto; }
-.welcome-brand-lockup > div { display: grid; gap: 5px; }
-.welcome-brand-lockup strong { color: var(--wire-ink); font: 950 29px/.85 'Barlow Condensed',Impact,sans-serif; letter-spacing: -.4px; }
-.welcome-brand-lockup small { color: var(--wire-red); font: 900 8px/1 monospace; letter-spacing: 1.2px; }
-.welcome-copy .edition { color: var(--wire-red); font: 900 9px/1 monospace; }
-#welcome h2 { margin: 8px 0 14px; color: var(--wire-ink); font: 950 40px/.92 'Barlow Condensed',Impact,sans-serif; }
-.welcome-role { margin: 0 0 20px; color: #444844; font: 11px/1.5 monospace; }
-.rules { gap: 0; margin: 0 0 22px; border-block: 1px solid var(--wire-line); }
-.rules > div { grid-template-columns: 50px minmax(0,1fr); gap: 10px; padding: 11px 0; border-bottom: 1px solid #c9c2b3; }
-.rules > div:last-child { border: 0; }
-.rules b { color: var(--wire-red); font: 900 10px/1 monospace; }
-.rules span { color: var(--wire-ink); font: 900 14px/1 'Barlow Condensed',Impact,sans-serif; }
-.rules small { margin-top: 4px; color: var(--wire-muted); font: 9px/1.35 monospace; }
-#welcome #begin { width: 100%; margin: 0; padding: 13px; color: white; background: var(--wire-red); font: 900 12px/1 'Barlow Condensed',Impact,sans-serif; }
-
-#sale { width: min(780px,92vw); padding: 0; text-align: left; box-shadow: 10px 12px 0 rgba(0,0,0,.35), 0 24px 70px rgba(0,0,0,.5); }
-.sale-photo { float: left; width: 58%; min-height: 390px; background: var(--wire-ink); }
-#sale-image { width: 100%; height: 100%; min-height: 390px; max-height: 65dvh; aspect-ratio: auto; object-fit: cover; }
-.sale-copy { margin-left: 58%; min-height: 390px; padding: 27px; }
-#sale-tag { display: block; color: var(--wire-red); font: 900 9px/1 monospace; letter-spacing: .6px; }
-#sale h2 { margin: 9px 0 16px; color: var(--wire-ink); font: 950 29px/1 'Barlow Condensed',Impact,sans-serif; }
-#sale-price { position: static; display: block; margin: 0 0 18px; padding: 0; color: var(--wire-money); background: transparent; box-shadow: none; font: 950 52px/1 'Barlow Condensed',Impact,sans-serif; }
-#sale-note { color: var(--wire-muted); font: 10px/1.45 monospace; }
-#dismiss-sale, #retry-photo { width: 100%; padding: 12px; color: white; background: var(--wire-red); font: 900 11px/1 'Barlow Condensed',Impact,sans-serif; }
-
-#result { color: var(--wire-ink); }
-.recap-top #final-total, .detail-earnings { color: var(--wire-money); }
-.recap-photo { color: var(--wire-ink)!important; border-color: var(--wire-line)!important; }
-.recap-price { color: white!important; background: rgba(11,17,17,.86)!important; }
-.recap-actions #again, .recap-actions #download-recap { color: white!important; background: var(--wire-red); border: 0; }
-#photo-detail { color: var(--wire-ink); }
-.detail-nav button { color: white; background: var(--wire-ink); }
 
 @media (max-width: 1150px) {
   .workspace { grid-template-columns: 205px minmax(0,1fr) 215px; }
@@ -343,10 +305,6 @@ dialog::backdrop { background: rgba(4,8,8,.82); backdrop-filter: blur(2px); }
   .roll { order: 3; width: 100%; height: 300px; }
   .lower-third .breaking { font-size: 17px; }
   .lower-third .headline h1 { font-size: 19px; }
-  .welcome-copy { padding: 26px; }
-  .sale-photo { float: none; width: 100%; min-height: 240px; }
-  #sale-image { min-height: 240px; max-height: 40vh; }
-  .sale-copy { margin: 0; min-height: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
