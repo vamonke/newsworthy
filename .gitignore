@@ -52,3 +52,6 @@
 !/orbis-motion-test/news-intro*.css
 !/orbis-motion-test/news-loading-design.html
 !/orbis-motion-test/news-layout-design.html
+
+# Unused 23 MB video; kept locally, not shipped.
+/orbis-motion-test/public/news-design/preview.webm

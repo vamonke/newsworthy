@@ -22,6 +22,12 @@ export default defineConfig(({ mode }) => {
   const newsJudge = createNewsJudge(geminiKey);
   const sessions = new Map();
   const issued = new Set();
+  // Each round opens its own Reactor session, so 4 minutes covers loading plus the 2-minute round.
+  // Reactor ends the session itself at this limit; our cleanup timer is the backstop.
+  const SESSION_SECONDS = 240;
+  // Leaderboard (planned, not built): the popup in news-design.html is a placeholder. In production,
+  // POST /api/score {roundId, name} should read the total from the judge's round state, never from the
+  // browser, then store it in D1; GET /api/leaderboard serves the table.
   async function cleanup(id, jwt) {
     const response = await fetch(`https://api.reactor.inc/sessions/${encodeURIComponent(id)}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${jwt}` }, signal: AbortSignal.timeout(15000),
@@ -54,7 +60,7 @@ export default defineConfig(({ mode }) => {
               if (sessions.size) return send(res, 409, { error: 'Another live session is still open. Stop it before starting another.' });
               const reply = await fetch('https://api.reactor.inc/tokens', {
                 method: 'POST', headers: { 'Reactor-API-Key': apiKey, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ authorization_details: [{ type: 'session', resources: { models: { match: [MODEL] } }, constraints: { max_sessions: 1, max_session_duration_seconds: 900 } }] }),
+                body: JSON.stringify({ authorization_details: [{ type: 'session', resources: { models: { match: [MODEL] } }, constraints: { max_sessions: 1, max_session_duration_seconds: SESSION_SECONDS } }] }),
                 signal: AbortSignal.timeout(20000),
               });
               const value = await reply.json();
@@ -68,7 +74,7 @@ export default defineConfig(({ mode }) => {
               if (typeof sessionId !== 'string' || sessionId.length > 200 || !issued.has(jwt)) return send(res, 400, { error: 'Unknown test session' });
               if (path === '/cleanup') { await cleanup(sessionId, jwt); return send(res, 200, { stopped: true }); }
               if (!sessions.has(sessionId)) {
-                const timer = setTimeout(() => cleanup(sessionId, jwt).catch(() => {}), 14 * 60 * 1000); timer.unref();
+                const timer = setTimeout(() => cleanup(sessionId, jwt).catch(() => {}), SESSION_SECONDS * 1000); timer.unref();
                 sessions.set(sessionId, { jwt, timer });
               }
               return send(res, 200, { registered: true });
