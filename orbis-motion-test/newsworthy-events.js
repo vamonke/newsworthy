@@ -2,7 +2,7 @@ export const EVENT_WINDOW_MS=20000;
 export const EVENTS=[
  {id:'ufo',code:'UFO',label:'Aliens',prompt:'A huge silver flying saucer flies low above the intersection. Blue light shines onto the street.'},
  {id:'explosion',code:'EXP',label:'Explosion',prompt:'A huge orange explosion bursts across the intersection. Debris flies above the street.'},
- {id:'flood',code:'FLD',label:'Flood',prompt:'Fast floodwater rushes through the intersection. Cars float down the street.'},
+ {id:'monster',code:'MON',label:'Flying monster',prompt:'A colossal flying monster circles low above the downtown intersection. Its enormous bat-like wings fill the sky and cast a dark shadow over the traffic. The creature stays fully visible above the street.'},
  {id:'lightning',code:'LTN',label:'Lightning',prompt:'Bright lightning strikes the street between the buildings. Repeated flashes light up the city.'},
  {id:'tornado',code:'TRN',label:'Tornado',prompt:'A huge rotating tornado fills the street between the buildings. Debris spins around the funnel.'},
  {id:'fireworks',code:'FWK',label:'Fireworks',prompt:'Huge colorful fireworks burst above the rooftops. Bright sparks fill the sky.'},
