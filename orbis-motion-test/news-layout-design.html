@@ -36,7 +36,8 @@
   .logo { font: 900 30px/.85 var(--cond); letter-spacing: -.6px; }
   .logo span { color: var(--red); }
   .masthead nav { margin-left: auto; display: flex; gap: 14px; align-items: center; font: 800 10px/1 Barlow, sans-serif; text-transform: uppercase; }
-  .masthead nav b { padding: 7px 9px; border: 1px solid var(--ink); }
+  .masthead nav a { color: inherit; text-decoration: none; }
+  .masthead nav .lb { padding: 7px 9px; border: 1px solid var(--ink); }
 
   /* Workspace: sizes set by layout() in px */
   .workspace { position: relative; height: calc(100% - var(--bar) - var(--mast)); padding: var(--pad); display: grid; gap: var(--pad); background: var(--ink); }
@@ -151,7 +152,7 @@
   <button data-layout="drawer">D · Photos in a drawer</button>
   <div class="metrics" id="metrics"></div>
 </div>
-<header class="masthead paper"><img src="/news-design/newsworthy-mark.svg" alt=""><div class="logo">NEWS<span>WORTHY</span></div><nav><span>How to play</span><span>About</span><span>GitHub</span><b>High scores</b></nav></header>
+<header class="masthead paper"><img src="/news-design/newsworthy-mark.svg" alt=""><div class="logo">NEWS<span>WORTHY</span></div><nav><a href="/news-howto-design.html#howto">How to play</a><a href="https://about.vamonke.com" target="_blank" rel="noopener">About</a><a href="https://github.com/vamonke/newsworthy" target="_blank" rel="noopener">GitHub</a><a class="lb" href="/news-howto-design.html#scores">Leaderboard</a></nav></header>
 <main class="workspace" id="workspace"></main>
 <section class="explain paper" id="explain"><button class="hide" id="hide-explain">HIDE ✕</button><h2></h2><p></p><div class="pc"><div><b>Good</b><span></span></div><div><b>Watch out</b><span></span></div></div></section>
 

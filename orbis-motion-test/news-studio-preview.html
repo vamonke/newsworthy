@@ -25,8 +25,8 @@
 <main id="game">
   <header class="masthead">
     <div class="logo" aria-label="Newsworthy"><strong>NEWS</strong><span>WORTHY</span></div>
-    <nav class="header-links" aria-label="About Newsworthy"><a href="#">Powered by Reactor</a><button type="button">How to play</button><a href="#">About</a><a href="#">GitHub</a></nav>
-    <button id="high-scores" type="button">HIGH SCORES</button>
+    <nav class="header-links" aria-label="About Newsworthy"><a href="https://reactor.inc" target="_blank" rel="noopener">Powered by Reactor</a><button id="how-to-play" type="button">How to play</button><a href="https://about.vamonke.com" target="_blank" rel="noopener">About</a><a href="https://github.com/vamonke/newsworthy" target="_blank" rel="noopener">GitHub</a></nav>
+    <button id="high-scores" type="button">LEADERBOARD</button>
   </header>
 
   <div class="workspace">
@@ -87,6 +87,8 @@
 </main>
 
 <script type="module">
+document.querySelector('#how-to-play').onclick=()=>document.querySelector('#welcome').showModal();
+document.querySelector('#high-scores').onclick=()=>location.href='/news-howto-design.html#scores';
   import {EVENTS} from './newsworthy-events.js';
   const $=selector=>document.querySelector(selector);
   for(const event of EVENTS){const button=document.createElement('button');button.type='button';button.dataset.event=event.id;const code=document.createElement('span');code.className='event-icon';code.textContent=event.code;const label=document.createElement('span');label.textContent=event.label;button.append(code,label);button.onclick=()=>scene('active',event);$('#event-options').append(button);}

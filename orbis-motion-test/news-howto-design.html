@@ -97,7 +97,7 @@ body{background:#0b1010;font-family:var(--mono);color:var(--wire-ink);overflow:h
 .card .tag{position:absolute;right:-6px;top:-8px;padding:5px 9px 3px;background:var(--wire-money);color:#fff;font:900 clamp(18px,1.6vw,24px)/1 var(--cond);transform:rotate(3deg)}
 .card h4{margin:0;font:900 clamp(18px,1.6vw,24px)/.95 var(--cond);text-transform:uppercase}
 
-/* ===== High scores ===== */
+/* ===== Leaderboard ===== */
 .board{list-style:none;margin:clamp(20px,2.4vw,34px) 0 0;padding:0;border-top:2px solid var(--wire-ink)}
 .board li{display:grid;grid-template-columns:clamp(40px,4vw,60px) 1fr auto;align-items:center;gap:10px;padding:clamp(8px,.9vw,12px) 0;border-bottom:1px solid var(--wire-ink)}
 .board li:last-child{border-bottom:2px solid var(--wire-ink)}
@@ -129,7 +129,7 @@ body{background:#0b1010;font-family:var(--mono);color:var(--wire-ink);overflow:h
   <button data-show="sold">Photo sold</button>
   <button data-show="detail">Photo detail</button>
   <button data-show="recap">Round recap</button>
-  <button data-show="scores">High scores</button>
+  <button data-show="scores">Leaderboard</button>
 </nav>
 
 <!-- How to play -->
@@ -199,10 +199,10 @@ body{background:#0b1010;font-family:var(--mono);color:var(--wire-ink);overflow:h
   </section>
 </div>
 
-<!-- High scores -->
+<!-- Leaderboard -->
 <div class="popup" id="scores" role="dialog" aria-labelledby="scores-title">
   <section class="sheet">
-    <div class="top"><h2 class="title" id="scores-title">High scores</h2><div class="meta">This week</div></div>
+    <div class="top"><h2 class="title" id="scores-title">Leaderboard</h2><div class="meta">This week</div></div>
     <ol class="board">
       <li><span class="rank">1</span><span class="name">Mira K.<small>Dinosaur stomps through traffic</small></span><span class="amt">$9,410</span></li>
       <li><span class="rank">02</span><span class="name">J. Ortega<small>UFO lands on bridge</small></span><span class="amt">$8,030</span></li>
