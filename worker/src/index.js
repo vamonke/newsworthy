@@ -35,15 +35,22 @@ async function api(request, env, path, ip) {
   if (env.API_LIMITER && !(await env.API_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many requests. Slow down a little.' });
 
   if (path === 'token') {
-    if (env.TOKEN_LIMITER && !(await env.TOKEN_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many new rounds. Wait a minute and try again.' });
     const body = await readJson(request, LIMITS.token);
-    if (!(await human(env, body.turnstile, ip))) return reply(403, { error: 'Please complete the check and try again.' });
-    const result = await gate.open(ip);
+    // A player waiting in line checks in every few seconds with their ticket. The Gate checks the
+    // ticket, so only a first request counts toward the new-round limit and needs the bot check.
+    const ticket = typeof body.ticket === 'string' && body.ticket.length <= 64 ? body.ticket : null;
+    if (!ticket && env.TOKEN_LIMITER && !(await env.TOKEN_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many new rounds. Wait a minute and try again.' });
+    if (!ticket && !(await human(env, body.turnstile, ip))) return reply(403, { error: 'Please complete the check and try again.' });
+    const result = await gate.open(ip, ticket);
     if (result.jwt) return reply(200, { jwt: result.jwt });
     // This wording keeps the game's "stop the previous session" button working.
     if (result.error === 'ip') return reply(409, { error: 'Another live session is still open. Stop it before starting another.' });
     if (result.error === 'daily') return reply(503, { error: 'Newsworthy has reached today’s limit. Come back tomorrow.' });
-    return reply(503, { error: 'All live cameras are in use. Try again in a minute.' }, { 'Retry-After': String(result.retryAfter) });
+    if (result.error === 'line') return reply(429, { error: 'You’re already waiting in line in another tab.' });
+    if (result.error === 'expired') return reply(410, { error: 'You lost your place in line. Try again.' });
+    if (result.error === 'full') return reply(503, { error: 'Lots of people are playing right now. Try again in a few minutes.' }, { 'Retry-After': '60' });
+    // Busy: the player is in line. The game shows their place and checks in again with the ticket.
+    return reply(503, { error: 'All live cameras are in use. You’re in line.', queue: result.queue }, { 'Retry-After': String(result.retryAfter) });
   }
   if (path === 'session' || path === 'cleanup') {
     const { sessionId, jwt } = await readJson(request, LIMITS.session);

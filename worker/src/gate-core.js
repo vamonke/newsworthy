@@ -7,9 +7,12 @@ export const LIMITS = {
   holdMs: 90_000, // a token must register its session within this time
   sessionMs: 240_000, // matches max_session_duration_seconds on the token
   graceMs: 15_000,
+  lineMs: 15_000, // a waiting player who stops checking in loses their place
+  lineMax: 100,
+  pollMs: 3_000, // how often a waiting player checks in
 };
 
-export const emptyState = () => ({ slots: {}, day: '', opened: 0 });
+export const emptyState = () => ({ slots: {}, line: [], day: '', opened: 0 });
 
 // Removes slots whose time is up and returns them so the caller can end their Reactor sessions.
 export function sweep(state, now) {
@@ -20,20 +23,67 @@ export function sweep(state, now) {
   return expired;
 }
 
-export function reserve(state, ip, now, limits = LIMITS) {
+function newDay(state, now) {
   const day = new Date(now).toISOString().slice(0, 10);
   if (state.day !== day) { state.day = day; state.opened = 0; }
-  const slots = Object.values(state.slots);
-  if (state.opened >= limits.dailyCap) return { error: 'daily' };
-  if (slots.filter((s) => s.ip === ip).length >= limits.perIp) return { error: 'ip' };
-  if (slots.length >= limits.slots) {
-    const soonest = Math.min(...slots.map((s) => s.until));
-    return { error: 'busy', retryAfter: Math.max(1, Math.ceil((soonest - now) / 1000)) };
-  }
+}
+
+function take(state, ip, now, limits) {
   const ticket = crypto.randomUUID();
   state.slots[ticket] = { ip, jwt: null, sessionId: null, until: now + limits.holdMs };
   state.opened++;
   return { ticket };
+}
+
+const held = (state, ip) => Object.values(state.slots).filter((s) => s.ip === ip).length;
+
+// Hands out a slot straight away, with no waiting line. Kept for callers that don't queue.
+export function reserve(state, ip, now, limits = LIMITS) {
+  newDay(state, now);
+  const slots = Object.values(state.slots);
+  if (state.opened >= limits.dailyCap) return { error: 'daily' };
+  if (held(state, ip) >= limits.perIp) return { error: 'ip' };
+  if (slots.length >= limits.slots) {
+    const soonest = Math.min(...slots.map((s) => s.until));
+    return { error: 'busy', retryAfter: Math.max(1, Math.ceil((soonest - now) / 1000)) };
+  }
+  return take(state, ip, now, limits);
+}
+
+// Drops waiting players who stopped checking in (closed the tab, lost connection).
+export function sweepLine(state, now, limits = LIMITS) {
+  state.line = (state.line || []).filter((w) => w.lastSeen + limits.lineMs > now);
+}
+
+const waiting = (state, i, limits) => ({ error: 'busy', retryAfter: Math.ceil(limits.pollMs / 1000), queue: { ticket: state.line[i].ticket, position: i + 1, ahead: i } });
+
+// First come, first served. With no ticket the player gets a slot only if nobody is waiting,
+// otherwise joins the end of the line. With a ticket the player gets a slot once the number of
+// free slots reaches their place in line, so nobody behind them can cut in.
+export function admit(state, ip, ticket, now, limits = LIMITS) {
+  newDay(state, now);
+  sweepLine(state, now, limits);
+  const free = limits.slots - Object.keys(state.slots).length;
+  if (ticket) {
+    const i = state.line.findIndex((w) => w.ticket === ticket);
+    if (i < 0) return { error: 'expired' };
+    const me = state.line[i];
+    me.lastSeen = now;
+    if (i >= free) return waiting(state, i, limits);
+    state.line.splice(i, 1);
+    if (state.opened >= limits.dailyCap) return { error: 'daily' };
+    if (held(state, me.ip) >= limits.perIp) return { error: 'ip' };
+    return take(state, me.ip, now, limits);
+  }
+  if (state.opened >= limits.dailyCap) return { error: 'daily' };
+  const mine = held(state, ip), queued = state.line.filter((w) => w.ip === ip).length;
+  if (mine >= limits.perIp) return { error: 'ip' };
+  if (!state.line.length && free > 0) return take(state, ip, now, limits);
+  // Slots and places in line together count toward the per-address limit.
+  if (mine + queued >= limits.perIp) return { error: 'line' };
+  if (state.line.length >= limits.lineMax) return { error: 'full' };
+  state.line.push({ ticket: crypto.randomUUID(), ip, lastSeen: now });
+  return waiting(state, state.line.length - 1, limits);
 }
 
 export function attach(state, ticket, jwt) {
@@ -70,7 +120,7 @@ export function releaseIp(state, ip) {
   return freed;
 }
 
-export function nextWake(state) {
-  const times = Object.values(state.slots).map((s) => s.until);
+export function nextWake(state, limits = LIMITS) {
+  const times = [...Object.values(state.slots).map((s) => s.until), ...(state.line || []).map((w) => w.lastSeen + limits.lineMs)];
   return times.length ? Math.min(...times) : null;
 }
