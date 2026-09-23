@@ -194,7 +194,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .shade { background: linear-gradient(180deg,rgba(6,10,10,.2),transparent 25%,transparent 67%,rgba(6,10,10,.28)); }
 .on-air { top: 14px; left: 14px; display: flex; align-items: stretch; gap: 0; box-shadow: none; }
 .on-air b { padding: 10px 13px; color: white; background: var(--wire-red); font: 900 17px/1 'Barlow Condensed',Impact,sans-serif; }
-.on-air > span { display: flex; align-items: center; padding: 0 12px; color: white; background: rgba(11,18,18,.88); font: 700 8px/1 monospace; letter-spacing: .3px; }
+.on-air > span { display: flex; align-items: center; padding: 0 16px; white-space: nowrap; color: white; background: rgba(11,18,18,.88); font: 700 13px/1 monospace; letter-spacing: .5px; }
 .stats { top: 14px; right: 14px; display: flex; color: white; background: rgba(11,18,18,.9); border: 0; border-bottom: 3px solid var(--wire-red); box-shadow: none; }
 .stats > div { padding: 7px 12px; }
 .stats > div:first-child { color: white; background: transparent; }
@@ -215,7 +215,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .viewfinder .shot-count, .viewfinder .shot-count b, .viewfinder .shot-count span { font: 800 9px/1 monospace; }
 .capture-zone { z-index: 8; bottom: 13px; pointer-events: none; }
 .capture-zone #notice { opacity: 0; margin: 0; padding: 0; }
-.capture-zone #notice.incoming { opacity: 1; max-width: 80%; padding: 9px 14px; color: var(--wire-ink); background: var(--wire-yellow); border: 2px solid var(--wire-ink); box-shadow: 3px 3px 0 rgba(0,0,0,.4); font: 900 17px/1.1 'Barlow Condensed',Impact,sans-serif; text-shadow: none; }
+.capture-zone #notice.incoming { opacity: 1; max-width: 80%; padding: 9px 14px; color: var(--wire-ink); background: var(--wire-yellow); border: 0; box-shadow: none; font: 900 17px/1.1 'Barlow Condensed',Impact,sans-serif; text-shadow: none; }
 #flash { z-index: 7; background: white; }
 
 #connection {
