@@ -201,17 +201,17 @@ dialog,
   backdrop-filter: blur(3px);
 }
 #connection strong {
-  max-width: 15ch;
+  max-width: min(22ch, 100%);
   color: white;
   font: 950 34px/.92 'Barlow Condensed',Impact,sans-serif;
   letter-spacing: .4px;
   text-transform: uppercase;
 }
 #connection p {
-  max-width: 38ch;
+  max-width: min(52ch, 100%);
   margin: 12px 0 8px;
   color: #e6e2d8;
-  font: 10px/1.5 monospace;
+  font: 12px/1.5 monospace;
 }
 #connection button {
   margin: 8px 4px 0;
