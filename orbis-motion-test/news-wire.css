@@ -53,7 +53,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .masthead #high-scores:hover { color: var(--wire-paper); background: var(--wire-ink); }
 
 .workspace {
-  --side-min: 300px;
+  --side-min: clamp(225px, 17vw, 360px);
   /* Width that fits beside the sidebar and within the height; the stage below the banner is then 16:9.
      Used by the children, so the cq units resolve against this container. */
   --feed-w: min(calc(100cqw - var(--side-min) - 5px), calc((100cqh - 101px) * 16 / 9 + 2px));
@@ -334,7 +334,6 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .roll-footer strong { color: var(--wire-money); font: 950 32px/1 'Barlow Condensed',Impact,sans-serif; }
 
 @media (max-width: 1150px) {
-  .workspace { --side-min: 260px; }
   .lower-third .breaking { padding: 0 11px; font-size: 19px; }
   .lower-third .headline h1 { font-size: 22px; }
   .event-label { font-size: 11px; }
