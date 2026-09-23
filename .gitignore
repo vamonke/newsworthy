@@ -49,3 +49,5 @@
 !orbis-motion-test/newsworthy-motion.js
 
 !orbis-motion-test/newsworthy-stars.js
+!/orbis-motion-test/news-intro*.css
+!/orbis-motion-test/news-loading-design.html

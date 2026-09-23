@@ -1,0 +1,62 @@
+/* Camcorder-viewfinder look for the loading intro. Scoped to #connection.viewfinder-look. */
+#connection .vf-osd { display: none; }
+#connection.viewfinder-look.intro {
+  cursor: pointer;
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.07) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 50%, rgba(8,12,12,.3) 0, rgba(8,12,12,.38) 70%, rgba(8,12,12,.6) 100%);
+}
+#connection.viewfinder-look.intro .vf-osd {
+  display: block;
+  position: absolute;
+  inset: 22px;
+  pointer-events: none;
+  color: rgba(244,244,236,.85);
+  font: 700 11px/1 'Space Mono', monospace;
+  letter-spacing: 1.5px;
+  text-shadow: 0 1px 2px rgba(0,0,0,.8);
+}
+/* Corner brackets */
+.vf-osd > i { position: absolute; width: 26px; height: 20px; border: 0 solid rgba(244,244,236,.7); filter: drop-shadow(0 1px 1px rgba(0,0,0,.6)); }
+.vf-osd > i:nth-of-type(1) { top: 0; left: 0; border-width: 2px 0 0 2px; }
+.vf-osd > i:nth-of-type(2) { top: 0; right: 0; border-width: 2px 2px 0 0; }
+.vf-osd > i:nth-of-type(3) { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+.vf-osd > i:nth-of-type(4) { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+/* Readouts in the four corners */
+.vf-osd > span { position: absolute; display: flex; align-items: center; gap: 10px; }
+.vf-osd .vf-tl { top: 10px; left: 12px; }
+.vf-osd .vf-tr { top: 10px; right: 12px; }
+.vf-osd .vf-bl { bottom: 10px; left: 12px; }
+.vf-osd .vf-br { bottom: 14px; right: 18px; }
+.vf-battery { width: 22px; height: 11px; border: 1.5px solid currentColor; padding: 1.5px; display: flex; gap: 1.5px; position: relative; }
+.vf-battery::after { content: ''; position: absolute; right: -4px; top: 2px; width: 2px; height: 4px; background: currentColor; }
+.vf-battery b { flex: 1; background: currentColor; }
+/* Centre crosshair */
+.vf-osd .vf-cross { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; transform: translate(-50%,-50%); }
+.vf-cross::before, .vf-cross::after { content: ''; position: absolute; background: rgba(244,244,236,.55); }
+.vf-cross::before { left: 50%; top: 0; bottom: 0; width: 1px; }
+.vf-cross::after { top: 50%; left: 0; right: 0; height: 1px; }
+
+/* The line itself: plain camera on-screen text under the crosshair. Lines swap with no motion. */
+#connection.viewfinder-look.intro #connection-title {
+  max-width: min(40ch, 92%);
+  margin-top: 80px;
+  padding: 0;
+  color: #f4f4ec;
+  background: none;
+  font: 700 17px/1.4 'Space Mono', monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.6);
+  animation: none;
+}
+#connection.viewfinder-look.intro #intro-sub { font: 11px/1.4 'Space Mono', monospace; letter-spacing: 1.5px; text-transform: uppercase; opacity: .8; }
+#connection.viewfinder-look.intro #connection-title,
+.picture-stage:has(#connection.viewfinder-look.intro) #opening-scene { animation: none; }
+/* The game HUD belongs to the live round; keep the camera screen clean while it loads. */
+.picture-stage:has(#connection.viewfinder-look.intro) :is(#aim, .on-air, .stats, #sound) { visibility: hidden; }
+
+@media (max-width: 650px) {
+  #connection.viewfinder-look.intro .vf-osd { inset: 12px; }
+  #connection.viewfinder-look.intro #connection-title { font-size: 14px; margin-top: 60px; }
+}
