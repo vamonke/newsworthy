@@ -1,7 +1,7 @@
 export const EVENT_WINDOW_MS=20000;
 export const EVENTS=[
  {id:'ufo',code:'UFO',name:'Aliens',label:'Aliens',prompt:'A huge silver flying saucer flies low above the intersection. Blue light shines onto the street.'},
- {id:'meteor',code:'MET',name:'Meteor crash',label:'Meteor crash',prompt:'A gigantic glowing meteor has crashed into the downtown intersection. The meteor sits fully visible inside a smoking crater as broken asphalt and small flames surround it.'},
+ {id:'artillery',code:'ART',name:'Artillery strike',label:'Artillery strike',prompt:'An artillery strike begins. Glowing shells streak down from the sky in long bright lines and slam into the street, each one bursting into a flash of orange fire and a tall column of gray smoke and dust. More shells keep falling.'},
  {id:'monster',code:'MON',name:'Flying monster',label:'Flying monster',prompt:'A colossal flying monster circles low above the downtown intersection. Its enormous bat-like wings fill the sky and cast a dark shadow over the traffic. The creature stays fully visible above the street.'},
  {id:'fireworks',code:'FWK',name:'Fireworks',label:'Fireworks',prompt:'Huge colorful fireworks burst above the rooftops. Bright sparks fill the sky.'},
  {id:'rainbow',code:'RNB',name:'Rainbow',label:'Rainbow',prompt:'A huge vivid rainbow stretches across the sky above the city rooftops.'},
