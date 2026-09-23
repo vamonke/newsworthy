@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Newsworthy</title>
+  <desc id="desc">An eye with a camera aperture, framed by four red viewfinder corners.</desc>
+  <rect width="512" height="512" rx="104" fill="#e8e0cf"/>
+  <path d="M55 256c55-91 117-136 201-136s146 45 201 136c-55 91-117 136-201 136S110 347 55 256Z" fill="#101820"/>
+  <path d="M106 256c43-60 91-90 150-90s107 30 150 90c-43 60-91 90-150 90s-107-30-150-90Z" fill="#e8e0cf"/>
+  <circle cx="256" cy="256" r="92" fill="#d9362b"/>
+  <path d="M256 164 309 195 309 256 256 287 203 256 203 195Z" fill="#101820" transform="rotate(30 256 256)"/>
+  <circle cx="256" cy="256" r="29" fill="#e8e0cf"/>
+  <path d="M72 172v-68h68M440 172v-68h-68M72 340v68h68M440 340v68h-68" fill="none" stroke="#d9362b" stroke-width="24" stroke-linecap="square"/>
+</svg>
