@@ -5,10 +5,27 @@ const buffers = new Map();
 const loading = new Map();
 const active = new Set();
 const clips = { shutter: 'cam_snap.mp3', news: 'breaking_news.mp3' };
+const loadingClip = '/audio/helicopter-midflight-interior.m4a';
+let loadingAudio;
 
 export function setSound(value) {
   sound = Boolean(value);
-  if (!sound) for (const source of active) source.stop();
+  if (!sound) {
+    for (const source of active) source.stop();
+    stopLoadingSound();
+  }
+}
+export function startLoadingSound() {
+  if (!sound) return;
+  loadingAudio ??= new Audio(loadingClip);
+  loadingAudio.loop = true;
+  loadingAudio.currentTime = 0;
+  void loadingAudio.play().catch(error => console.warn('Could not play loading sound', error));
+}
+export function stopLoadingSound() {
+  if (!loadingAudio) return;
+  loadingAudio.pause();
+  loadingAudio.currentTime = 0;
 }
 export function context() {
   audio ??= new (window.AudioContext || window.webkitAudioContext)();

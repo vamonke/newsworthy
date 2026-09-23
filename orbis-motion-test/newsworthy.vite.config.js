@@ -8,7 +8,6 @@ import { MODEL } from './prompts.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const workspace = resolve(root, '..');
-const SESSION_MAX_SECONDS = 360;
 const send = (res, status, body) => { res.statusCode = status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(body)); };
 async function body(req, limit = 1024 * 1024) {
   const chunks = []; let size = 0;
@@ -16,8 +15,9 @@ async function body(req, limit = 1024 * 1024) {
   return Buffer.concat(chunks);
 }
 export default defineConfig(({ mode }) => {
-  const apiKey = loadEnv(mode, workspace, '').REACTOR_API_KEY;
-  const falKey = loadEnv(mode, workspace, '').FAL_KEY;
+  const env = loadEnv(mode, workspace, '');
+  const apiKey = env.REACTOR_API_KEY;
+  const falKey = env.FAL_KEY || env.FAL_API_KEY;
   // Only sessions registered with the short-lived JWT issued by this test.
   const newsJudge = createNewsJudge(falKey);
   const sessions = new Map();
@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
     sessions.delete(id);
   }
   return {
-    root, build: { rollupOptions: { input: { news: resolve(root, 'news-design.html') } } }, server: { host: '127.0.0.1', port: 4320, strictPort: true },
+    root, build: { rollupOptions: { input: { news: resolve(root, 'news-design.html') } } }, server: { host: '127.0.0.1', port: 4318, strictPort: true },
     plugins: [{
       name: 'orbis-test-api', configureServer(server) {
         server.middlewares.use((req, res, next) => {
@@ -42,7 +42,7 @@ export default defineConfig(({ mode }) => {
         server.middlewares.use('/api', async (req, res, next) => {
           try {
             const path = req.url.split('?')[0];
-            if (path === '/status') return send(res, 200, { configured: Boolean(apiKey), judgeConfigured: Boolean(falKey), judgeProvider: 'fal-openrouter', model: MODEL, activeSessions: sessions.size });
+            if (path === '/status') return send(res, 200, { configured: Boolean(apiKey), model: MODEL, activeSessions: sessions.size });
             if (req.method !== 'POST') return next();
             // Local dev API: reject cross-origin writes.
             if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return send(res, 403, { error: 'Invalid origin' });
@@ -54,7 +54,7 @@ export default defineConfig(({ mode }) => {
               if (sessions.size) return send(res, 409, { error: 'Another live session is still open. Stop it before starting another.' });
               const reply = await fetch('https://api.reactor.inc/tokens', {
                 method: 'POST', headers: { 'Reactor-API-Key': apiKey, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ authorization_details: [{ type: 'session', resources: { models: { match: [MODEL] } }, constraints: { max_sessions: 1, max_session_duration_seconds: SESSION_MAX_SECONDS } }] }),
+                body: JSON.stringify({ authorization_details: [{ type: 'session', resources: { models: { match: [MODEL] } }, constraints: { max_sessions: 1, max_session_duration_seconds: 900 } }] }),
                 signal: AbortSignal.timeout(20000),
               });
               const value = await reply.json();
@@ -65,12 +65,10 @@ export default defineConfig(({ mode }) => {
             }
             if (path === '/session' || path === '/cleanup') {
               const { sessionId, jwt } = JSON.parse(await body(req, 20000));
-              const validSessionId=typeof sessionId==='string'&&sessionId.length>0&&sessionId.length<=200;
-              const validJwt=typeof jwt==='string'&&jwt.length<=10000&&jwt.split('.').length===3;
-              if (!validSessionId||!validJwt||(path==='/session'&&!issued.has(jwt))) return send(res, 400, { error: 'Unknown test session' });
+              if (typeof sessionId !== 'string' || sessionId.length > 200 || !issued.has(jwt)) return send(res, 400, { error: 'Unknown test session' });
               if (path === '/cleanup') { await cleanup(sessionId, jwt); return send(res, 200, { stopped: true }); }
               if (!sessions.has(sessionId)) {
-                const timer = setTimeout(() => cleanup(sessionId, jwt).catch(() => {}), SESSION_MAX_SECONDS * 1000); timer.unref();
+                const timer = setTimeout(() => cleanup(sessionId, jwt).catch(() => {}), 14 * 60 * 1000); timer.unref();
                 sessions.set(sessionId, { jwt, timer });
               }
               return send(res, 200, { registered: true });

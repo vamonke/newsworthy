@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Newsworthy split second concept</title>
+  <desc id="desc">A camera flash appears in the instant between four closing shutter panels.</desc>
+  <rect width="512" height="512" rx="104" fill="#e8e0cf"/>
+  <path d="M60 60h176v176H60ZM276 60h176v176H276ZM60 276h176v176H60ZM276 276h176v176H276Z" fill="#101820"/>
+  <path d="M256 91c18 94 47 123 165 165-118 42-147 71-165 165-18-94-47-123-165-165 118-42 147-71 165-165Z" fill="#e8e0cf"/>
+  <circle cx="256" cy="256" r="70" fill="#d9362b"/>
+  <path d="M256 201c10 35 22 45 61 55-39 10-51 20-61 55-10-35-22-45-61-55 39-10 51-20 61-55Z" fill="#e8e0cf"/>
+</svg>

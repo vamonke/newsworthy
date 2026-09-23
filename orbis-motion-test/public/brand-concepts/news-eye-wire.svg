@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Newsworthy wire eye concept</title>
+  <desc id="desc">A camera shutter eye rendered like a hard red newsroom crop mark on dark wire-service equipment.</desc>
+  <rect width="512" height="512" rx="104" fill="#101820"/>
+  <path d="M42 256c62-98 130-147 214-147s152 49 214 147c-62 98-130 147-214 147S104 354 42 256Z" fill="#e8e0cf"/>
+  <path d="M102 256c45-61 96-92 154-92s109 31 154 92c-45 61-96 92-154 92s-109-31-154-92Z" fill="#101820"/>
+  <circle cx="256" cy="256" r="93" fill="#d9362b"/>
+  <g fill="none" stroke="#101820" stroke-width="17">
+    <path d="M256 215h71"/>
+    <path d="m292 235 35 62"/>
+    <path d="m292 277-36 61"/>
+    <path d="M256 297h-71"/>
+    <path d="m220 277-35-62"/>
+    <path d="m220 235 36-61"/>
+  </g>
+  <path d="m256 208 42 24v48l-42 24-42-24v-48Z" fill="#e8e0cf"/>
+  <path d="M70 188v-78h78M442 324v78h-78" fill="none" stroke="#d9362b" stroke-width="25"/>
+  <path d="M68 418h176M268 418h176M68 82h112M204 82h240" fill="none" stroke="#e8e0cf" stroke-width="8"/>
+  <circle cx="256" cy="82" r="8" fill="#d9362b"/>
+</svg>

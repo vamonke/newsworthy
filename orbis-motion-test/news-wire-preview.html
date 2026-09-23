@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Newsworthy — Wire Desk prototype</title>
+  <style>
+    :root {
+      --paper: #eeeae0;
+      --paper-hi: #f8f5ec;
+      --ink: #101414;
+      --ink-2: #1b2324;
+      --line: #aaa89e;
+      --muted: #666861;
+      --red: #d62825;
+      --red-dark: #a71918;
+      --money: #087b50;
+      --yellow: #f0c94d;
+      --paper-texture: url('public/news-design/wire-paper-texture.webp');
+      --toolbar: 48px;
+      --masthead: 72px;
+      --sans: "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { color: var(--ink); background: #0c1010; font-family: var(--sans); }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .prototype-bar {
+      height: var(--toolbar);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 12px;
+      color: #daddd8;
+      background: #101616;
+      border-bottom: 1px solid #394040;
+      position: relative;
+      z-index: 50;
+    }
+    .prototype-bar strong {
+      color: #fff;
+      margin-right: 7px;
+      font: 800 11px/1 var(--mono);
+      letter-spacing: .08em;
+    }
+    .prototype-bar button {
+      border: 1px solid #495050;
+      padding: 7px 10px;
+      color: #daddd8;
+      background: #1c2424;
+      font: 700 10px/1 var(--mono);
+      text-transform: uppercase;
+    }
+    .prototype-bar button:hover,
+    .prototype-bar button[aria-pressed="true"] { color: #fff; border-color: #9caaa8; background: #35403f; }
+    .prototype-bar span { margin-left: auto; color: #899391; font: 10px/1 var(--mono); }
+
+    #prototype {
+      height: calc(100dvh - var(--toolbar));
+      min-width: 1080px;
+      display: grid;
+      grid-template-rows: var(--masthead) minmax(0, 1fr);
+      background: var(--ink);
+    }
+
+    .paper {
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(rgba(238,234,224,.16), rgba(238,234,224,.16)),
+        var(--paper-texture);
+      background-size: cover;
+      background-position: center;
+      background-blend-mode: normal, multiply;
+      box-shadow: inset 0 0 34px rgba(52,43,25,.22);
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(330px, 1fr) auto minmax(330px, 1fr);
+      align-items: center;
+      padding: 0 18px;
+      border-bottom: 5px solid var(--ink);
+      min-height: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      width: 34px; height: 34px; border: 2px solid var(--ink); border-radius: 50%;
+      display: grid; place-items: center; font: 900 17px/1 var(--sans);
+    }
+    .brand-name { font: 950 35px/.85 var(--sans); letter-spacing: -.04em; white-space: nowrap; }
+    .brand-name em { color: var(--red); font-style: normal; }
+    .brand-rule { height: 34px; width: 1px; background: var(--ink); }
+    .brand small { font: 700 9px/1.15 var(--mono); letter-spacing: .06em; }
+    .tagline { margin: 0; font: italic 22px/1.1 Georgia, serif; letter-spacing: .02em; transform: rotate(-1deg); }
+    .tagline b { border-bottom: 2px solid var(--red); font-weight: 400; padding: 0 9px 3px; }
+    .desk-id { justify-self: end; display: flex; align-items: center; gap: 18px; }
+    .desk-id p { margin: 0; font: 700 9px/1.25 var(--mono); text-transform: uppercase; }
+    .desk-stamp { border: 2px solid var(--red); padding: 7px 10px 5px; color: var(--red); font: 900 13px/.95 var(--sans); transform: rotate(-3deg); }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: clamp(224px, 17vw, 286px) minmax(0, 1fr) clamp(238px, 18vw, 306px);
+      gap: 5px;
+      padding: 5px;
+      background: #111717;
+    }
+    .desk-panel { min-height: 0; border: 1px solid #1d2424; overflow: hidden; }
+    .panel-head {
+      height: 48px;
+      padding: 0 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-head h2 { margin: 0; font: 950 22px/1 var(--sans); letter-spacing: -.02em; }
+    .panel-head small { font: 700 9px/1 var(--mono); }
+    .red-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: var(--red); }
+
+    .incident-panel { display: grid; grid-template-rows: 48px minmax(0, 1fr) auto; }
+    .incident-list { overflow: auto; scrollbar-width: thin; }
+    .incident {
+      width: 100%; min-height: 47px; border: 0; border-bottom: 1px solid #c9c5b9;
+      display: grid; grid-template-columns: 34px 30px 1fr; align-items: center;
+      padding: 0 10px; color: var(--ink); background: transparent; text-align: left;
+    }
+    .incident:hover { background: rgba(255,255,255,.5); }
+    .incident[aria-pressed="true"] { box-shadow: inset 6px 0 var(--red); background: var(--paper-hi); }
+    .incident[disabled] { color: #8e8e86; cursor: progress; }
+    .incident .code { font: 900 9px/1 var(--mono); }
+    .incident .number { font: 500 11px/1 var(--mono); }
+    .incident .label { font: 850 13px/1.05 var(--sans); letter-spacing: .02em; text-transform: uppercase; }
+    .incident .cooldown { grid-column: 1/-1; height: 2px; background: var(--red); transform-origin: left; animation: cooldown 5s linear; }
+    @keyframes cooldown { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .dispatch { padding: 11px; border-top: 3px solid var(--ink); }
+    .dispatch label { display: block; margin-bottom: 7px; font: 900 12px/1 var(--sans); letter-spacing: .03em; }
+    .dispatch-row { display: grid; grid-template-columns: 1fr 39px; }
+    .dispatch input { width: 100%; min-width: 0; border: 1px solid var(--line); padding: 10px; background: rgba(255,255,255,.44); color: var(--ink); font: 11px/1 var(--mono); }
+    .dispatch button { border: 0; color: white; background: var(--ink-2); font-weight: 900; }
+
+    .broadcast { min-width: 0; min-height: 0; position: relative; overflow: hidden; background: #1a2222; border: 1px solid #303737; }
+    .city-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; pointer-events: none; }
+    .city-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,12,12,.22), transparent 24%, transparent 66%, rgba(7,12,12,.3)); pointer-events: none; }
+    .live-id { position: absolute; top: 14px; left: 14px; display: flex; align-items: stretch; z-index: 4; }
+    .live-id b { padding: 10px 13px; color: white; background: var(--red); font: 900 18px/1 var(--sans); }
+    .live-id span { display: grid; place-items: center; padding: 0 12px; color: white; background: rgba(11,18,18,.88); font: 700 9px/1 var(--mono); }
+    .metrics { position: absolute; top: 14px; right: 14px; display: flex; z-index: 4; }
+    .metric { min-width: 118px; padding: 8px 12px; border-left: 1px solid #637070; background: rgba(11,18,18,.9); color: white; }
+    .metric small { display: block; margin-bottom: 2px; font: 700 8px/1 var(--mono); letter-spacing: .04em; }
+    .metric strong { font: 800 27px/1 var(--mono); }
+    .metric.money strong { color: #35d69a; }
+
+    .viewfinder {
+      position: absolute; z-index: 3; width: min(48%, 570px); aspect-ratio: 16/9;
+      left: 50%; top: 48%; transform: translate(-50%, -50%);
+      border: 1px solid rgba(255,255,255,.75); pointer-events: none;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,.45));
+    }
+    .viewfinder::before, .viewfinder::after { content: ""; position: absolute; left: 50%; top: 50%; background: white; opacity: .9; transform: translate(-50%, -50%); }
+    .viewfinder::before { width: 26px; height: 1px; }
+    .viewfinder::after { width: 1px; height: 26px; }
+    .corner { position: absolute; width: 24px; height: 24px; }
+    .corner.tl { left: -2px; top: -2px; border-left: 4px solid white; border-top: 4px solid white; }
+    .corner.tr { right: -2px; top: -2px; border-right: 4px solid white; border-top: 4px solid white; }
+    .corner.bl { left: -2px; bottom: -2px; border-left: 4px solid white; border-bottom: 4px solid white; }
+    .corner.br { right: -2px; bottom: -2px; border-right: 4px solid white; border-bottom: 4px solid white; }
+    .shots-left { position: absolute; right: 0; top: -22px; color: white; font: 800 10px/1 var(--mono); text-shadow: 0 1px 3px #000; }
+    .viewfinder.captured { animation: frame-pop .28s ease-out; }
+    @keyframes frame-pop { 50% { transform: translate(-50%, -50%) scale(.975); border-color: var(--red); } }
+    .flash { position: absolute; inset: 0; z-index: 15; background: white; opacity: 0; pointer-events: none; }
+    .flash.on { animation: flash .34s ease-out; }
+    @keyframes flash { 0% { opacity: .93; } 100% { opacity: 0; } }
+    .incident-alert {
+      position: absolute; z-index: 8; left: 50%; bottom: 122px; transform: translateX(-50%);
+      padding: 10px 16px; background: var(--yellow); color: var(--ink); border: 2px solid var(--ink);
+      font: 900 18px/1 var(--sans); box-shadow: 3px 3px 0 rgba(0,0,0,.4);
+    }
+
+    .broadcast-stack { position: absolute; z-index: 6; left: 0; right: 0; bottom: 0; }
+    .lower-third { min-height: 64px; display: grid; grid-template-columns: auto minmax(0, 1fr); background: var(--paper-hi); border-top: 3px solid var(--ink); }
+    .breaking { display: grid; place-items: center; padding: 0 17px; color: white; background: var(--red); font: 950 25px/1 var(--sans); font-style: italic; }
+    .headline { display: flex; align-items: center; min-width: 0; padding: 10px 16px; overflow: hidden; }
+    .headline strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 950 27px/.95 var(--sans); letter-spacing: -.02em; }
+    .ticker { height: 36px; display: flex; align-items: stretch; overflow: hidden; color: white; background: #0b1111; border-top: 1px solid #56605e; font-family: var(--mono); }
+    .ticker-label { position: relative; z-index: 2; display: flex; align-items: center; flex: 0 0 auto; padding: 0 13px; background: #0b1111; font-size: 13px; font-weight: 900; }
+    .ticker-label::after { content: "▶"; color: var(--red); margin-left: 8px; font-size: 9px; }
+    .ticker-window { min-width: 0; overflow: hidden; display: flex; align-items: center; }
+    .ticker-track { width: max-content; display: flex; animation: ticker 34s linear infinite; }
+    .ticker-copy { display: flex; align-items: center; gap: 18px; padding-right: 18px; white-space: nowrap; font-size: 10px; }
+    .ticker-copy b { color: #ef6c58; }
+    .ticker-copy i { color: var(--red); font-style: normal; }
+    @keyframes ticker { to { transform: translateX(-50%); } }
+    @media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
+
+    .roll-panel { display: grid; grid-template-rows: 48px minmax(0, 1fr) 48px; }
+    .photo-list { min-height: 0; overflow: auto; padding: 10px; scrollbar-width: thin; }
+    .photo-card { position: relative; padding: 7px; margin-bottom: 10px; background-color: var(--paper-hi); background-image: linear-gradient(rgba(248,245,236,.26), rgba(248,245,236,.26)), var(--paper-texture); background-size: cover; background-position: center; background-blend-mode: normal, multiply; border: 1px solid #9f9888; box-shadow: inset 0 0 18px rgba(70,55,30,.16), 0 1px 0 rgba(0,0,0,.2); animation: file-in .32s ease-out; }
+    @keyframes file-in { from { opacity: 0; transform: translateY(12px); } }
+    .photo-card img { display: block; width: 100%; aspect-ratio: 16/9; object-fit: cover; filter: saturate(.9) contrast(1.04); }
+    .photo-card h3 { margin: 7px 0 4px; font: 900 13px/1.05 var(--sans); text-transform: uppercase; }
+    .photo-meta { display: flex; align-items: end; justify-content: space-between; gap: 8px; font: 8px/1.3 var(--mono); }
+    .photo-meta strong { color: var(--money); font: 900 21px/1 var(--sans); }
+    .sold { position: absolute; right: 8px; top: 43%; transform: rotate(-8deg); padding: 3px 5px; border: 2px solid var(--red); color: var(--red); background: rgba(248,245,236,.82); font: 950 17px/.9 var(--sans); }
+    .empty-roll { height: 100%; display: grid; place-items: center; align-content: center; gap: 9px; text-align: center; color: #73746e; }
+    .empty-roll strong { font: 900 15px/1 var(--sans); }
+    .empty-roll span { max-width: 20ch; font: 10px/1.4 var(--mono); }
+    .roll-total { display: flex; justify-content: space-between; align-items: center; padding: 0 13px; border-top: 3px solid var(--ink); }
+    .roll-total span { font: 800 9px/1 var(--mono); }
+    .roll-total strong { color: var(--money); font: 950 25px/1 var(--sans); }
+
+    dialog { border: 0; padding: 0; color: var(--ink); background: var(--paper); box-shadow: 0 24px 80px rgba(0,0,0,.6); }
+    dialog::backdrop { background: rgba(4,8,8,.78); backdrop-filter: blur(2px); }
+    .modal-kicker { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; color: white; background: var(--ink); font: 800 9px/1 var(--mono); letter-spacing: .06em; }
+    .modal-kicker button { border: 0; color: white; background: transparent; font: 900 15px/1 var(--sans); }
+    #briefing { width: min(700px, 90vw); }
+    .brief-body { display: grid; grid-template-columns: 1.05fr .95fr; }
+    .brief-body img { width: 100%; height: 100%; object-fit: cover; min-height: 380px; }
+    .brief-copy { padding: 30px; }
+    .brief-copy h2 { margin: 7px 0 14px; font: 950 42px/.9 var(--sans); }
+    .brief-copy > p { font: 13px/1.5 var(--mono); color: #444844; }
+    .brief-steps { margin: 26px 0; border-block: 1px solid var(--line); }
+    .brief-step { display: grid; grid-template-columns: 50px 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid #ccc8bc; }
+    .brief-step:last-child { border: 0; }
+    .brief-step b { color: var(--red); font: 900 11px/1 var(--mono); }
+    .brief-step strong { display: block; font: 900 15px/1 var(--sans); }
+    .brief-step span { font: 10px/1.35 var(--mono); color: var(--muted); }
+    .primary-action { width: 100%; border: 0; padding: 13px; color: white; background: var(--red); font: 900 13px/1 var(--sans); }
+
+    #sale { width: min(780px, 92vw); }
+    .sale-body { display: grid; grid-template-columns: 1.2fr .8fr; }
+    .sale-image { position: relative; min-height: 390px; background: #101616; }
+    .sale-image img { width: 100%; height: 100%; object-fit: cover; }
+    .sale-stamp { position: absolute; right: 18px; bottom: 18px; padding: 8px 12px; border: 4px solid var(--red); color: var(--red); background: rgba(248,245,236,.9); font: 950 28px/.9 var(--sans); transform: rotate(-5deg); }
+    .sale-copy { padding: 28px; }
+    .sale-copy small { color: var(--red); font: 900 10px/1 var(--mono); }
+    .sale-copy h2 { margin: 10px 0 16px; font: 950 32px/.98 var(--sans); }
+    .sale-price { color: var(--money); font: 950 55px/1 var(--sans); }
+    .grade-list { margin: 22px 0; border-block: 1px solid var(--line); }
+    .grade-list div { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #cbc7ba; font: 10px/1 var(--mono); }
+    .grade-list div:last-child { border: 0; }
+
+    #recap { width: min(980px, 94vw); }
+    .recap-body { padding: 24px; }
+    .recap-top { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding-bottom: 18px; border-bottom: 4px solid var(--ink); }
+    .recap-top h2 { margin: 5px 0 0; font: 950 42px/.9 var(--sans); }
+    .recap-top strong { color: var(--money); font: 950 48px/1 var(--sans); }
+    .recap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; margin: 18px 0; }
+    .recap-grid article { background: var(--paper-hi); border: 1px solid var(--line); }
+    .recap-grid img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+    .recap-grid h3 { margin: 9px; font: 900 14px/1 var(--sans); text-transform: uppercase; }
+    .recap-grid p { display: flex; justify-content: space-between; margin: 9px; font: 9px/1 var(--mono); }
+    .recap-grid strong { color: var(--money); font-size: 17px; }
+
+    @media (max-height: 760px) {
+      :root { --masthead: 60px; }
+      .brand-name { font-size: 29px; }
+      .incident { min-height: 39px; }
+      .photo-card img { aspect-ratio: 2/1; }
+      .panel-head { height: 42px; }
+      .incident-panel, .roll-panel { grid-template-rows: 42px minmax(0, 1fr) auto; }
+      .lower-third { min-height: 55px; }
+      .breaking { font-size: 21px; }
+      .headline strong { font-size: 23px; }
+      .ticker { height: 31px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="prototype-bar" aria-label="Prototype states">
+    <strong>WIRE DESK POC</strong>
+    <button data-state="default" aria-pressed="true">Default round</button>
+    <button data-state="briefing">Briefing</button>
+    <button data-state="incident">Incident incoming</button>
+    <button data-state="sale">Photo sold</button>
+    <button data-state="empty">Empty camera roll</button>
+    <button data-state="recap">Round recap</button>
+    <span>Static prototype · no API calls</span>
+  </nav>
+
+  <main id="prototype">
+    <header class="masthead paper">
+      <div class="brand">
+        <span class="brand-mark">N</span>
+        <span class="brand-name">NEWS<em>WORTHY</em></span>
+        <span class="brand-rule"></span>
+        <small>PHOTOS<br>SHAPE<br>TOMORROW</small>
+      </div>
+      <p class="tagline">Same chaos. <b>A clearer picture.</b></p>
+      <div class="desk-id">
+        <p>International news photo wire<br>Editorial desk · Est. 1958</p>
+        <span class="desk-stamp">REAL MOMENTS.<br>HIGHER STANDARDS.</span>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="desk-panel incident-panel paper" aria-label="Incident desk">
+        <header class="panel-head"><h2>INCIDENTS</h2><small><i class="red-dot"></i>LIVE FEED</small></header>
+        <div class="incident-list">
+          <button class="incident" data-name="UFO sighting" aria-pressed="true"><span class="code">UFO</span><span class="number">01</span><span class="label">UFO sighting</span></button>
+          <button class="incident" data-name="Explosion"><span class="code">EXP</span><span class="number">02</span><span class="label">Explosion</span></button>
+          <button class="incident" data-name="Flash flood"><span class="code">FLD</span><span class="number">03</span><span class="label">Flash flood</span></button>
+          <button class="incident" data-name="Lightning strike"><span class="code">LTN</span><span class="number">04</span><span class="label">Lightning strike</span></button>
+          <button class="incident" data-name="Tornado"><span class="code">TRN</span><span class="number">05</span><span class="label">Tornado</span></button>
+          <button class="incident" data-name="Fireworks"><span class="code">FWK</span><span class="number">06</span><span class="label">Fireworks</span></button>
+          <button class="incident" data-name="Red balloon"><span class="code">BAL</span><span class="number">07</span><span class="label">Red balloon</span></button>
+          <button class="incident" data-name="Rubber duck"><span class="code">DUK</span><span class="number">08</span><span class="label">Rubber duck</span></button>
+          <button class="incident" data-name="Giant doughnut"><span class="code">DNT</span><span class="number">09</span><span class="label">Giant doughnut</span></button>
+          <button class="incident" data-name="Plane crash"><span class="code">AIR</span><span class="number">10</span><span class="label">Plane crash</span></button>
+        </div>
+        <form class="dispatch">
+          <label for="custom-event">＋ CUSTOM INCIDENT</label>
+          <div class="dispatch-row"><input id="custom-event" placeholder="Describe a news event…"><button aria-label="Send custom incident">→</button></div>
+        </form>
+      </aside>
+
+      <section class="broadcast" id="broadcast" aria-label="Live city camera">
+        <img class="city-image" src="public/news-judge/busy-opening-ufo-beam.png" alt="Aerial city view with a UFO, fire and giant rubber duck">
+        <div class="city-shade"></div>
+        <div class="live-id"><b>LIVE</b><span>CHOPPER 7 · METRO CITY</span></div>
+        <div class="metrics">
+          <div class="metric"><small>TIME REMAINING</small><strong>1:08</strong></div>
+          <div class="metric money"><small>EARNINGS</small><strong id="earnings">$1,850</strong></div>
+        </div>
+        <div class="viewfinder" id="viewfinder">
+          <span class="shots-left"><b id="shots-left">8</b> SHOTS LEFT</span>
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        </div>
+        <div class="flash" id="flash"></div>
+        <div class="incident-alert" id="incident-alert" hidden>Incoming: UFO sighting</div>
+        <div class="broadcast-stack">
+          <div class="lower-third">
+            <div class="breaking">BREAKING NEWS</div>
+            <div class="headline"><strong>UFO SEEN OVER METRO CITY</strong></div>
+          </div>
+          <div class="ticker">
+            <span class="ticker-label">WIRE</span>
+            <div class="ticker-window"><div class="ticker-track">
+              <div class="ticker-copy"><b>10:14</b> Reports of unexplained aerial object over Metro City <i>●</i> <b>10:12</b> Major fire shuts down freeway <i>●</i> <b>10:10</b> Giant rubber duck spotted in river <i>●</i> <b>10:08</b> City officials request public avoid area <i>●</i></div>
+              <div class="ticker-copy" aria-hidden="true"><b>10:14</b> Reports of unexplained aerial object over Metro City <i>●</i> <b>10:12</b> Major fire shuts down freeway <i>●</i> <b>10:10</b> Giant rubber duck spotted in river <i>●</i> <b>10:08</b> City officials request public avoid area <i>●</i></div>
+            </div></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="desk-panel roll-panel paper" aria-label="Camera roll">
+        <header class="panel-head"><h2>CAMERA ROLL</h2><small id="photo-count">3 / 10</small></header>
+        <div class="photo-list" id="photo-list"></div>
+        <footer class="roll-total"><span>YOUR EARNINGS</span><strong id="roll-total">$1,850</strong></footer>
+      </aside>
+    </section>
+  </main>
+
+  <dialog id="briefing">
+    <div class="modal-kicker"><span>ORBIS WIRE · FIELD ASSIGNMENT 07</span><button data-close aria-label="Close">×</button></div>
+    <div class="brief-body">
+      <img src="public/news-judge/busy-opening.png" alt="Aerial view of Metro City">
+      <div class="brief-copy">
+        <small>YOU ARE ON ASSIGNMENT</small>
+        <h2>Find the story before the city moves on.</h2>
+        <p>Two minutes. Ten frames. The desk pays for timing, clarity and spectacle.</p>
+        <div class="brief-steps">
+          <div class="brief-step"><b>CALL</b><div><strong>Create the scene.</strong><span>Choose an incident or dispatch your own.</span></div></div>
+          <div class="brief-step"><b>FRAME</b><div><strong>Follow the action.</strong><span>Move the viewfinder. Click the live feed.</span></div></div>
+          <div class="brief-step"><b>FILE</b><div><strong>Sell the photograph.</strong><span>The desk values the strongest stories.</span></div></div>
+        </div>
+        <button class="primary-action" data-close>GO LIVE →</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="sale">
+    <div class="modal-kicker"><span>INCOMING FROM THE PHOTO DESK</span><button data-close aria-label="Close">×</button></div>
+    <div class="sale-body">
+      <div class="sale-image"><img src="public/news-judge/busy-opening-ufo-narrow.png" alt="UFO above the city"><span class="sale-stamp">SOLD</span></div>
+      <div class="sale-copy">
+        <small>ORBIS WIRE · PHOTO 004</small>
+        <h2>Massive beam lights up downtown.</h2>
+        <div class="sale-price">$800</div>
+        <div class="grade-list"><div><span>EVENT</span><b>MAJOR</b></div><div><span>CLARITY</span><b>SHARP</b></div><div><span>SPECTACLE</span><b>HIGH</b></div></div>
+        <button class="primary-action" data-close>BACK TO THE CITY →</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="recap">
+    <div class="modal-kicker"><span>NEWSWORTHY · ROUND CLOSED</span><button data-close aria-label="Close">×</button></div>
+    <div class="recap-body">
+      <div class="recap-top"><div><small>YOUR FILED REPORT</small><h2>Three moments made the wire.</h2></div><strong>$1,850</strong></div>
+      <div class="recap-grid"></div>
+      <button class="primary-action" data-close>PLAY ANOTHER ROUND →</button>
+    </div>
+  </dialog>
+
+  <script>
+    const photoData = [
+      { image: 'public/news-judge/busy-opening-ufo-narrow.png', title: 'Beam over Metro City', time: '10:14:27', value: '$800' },
+      { image: 'public/news-judge/incident.jpg', title: 'Fire closes the freeway', time: '10:13:02', value: '$650' },
+      { image: 'public/news-judge/spectacle.jpg', title: 'Duck lands in the river', time: '10:11:48', value: '$400' }
+    ];
+    const list = document.querySelector('#photo-list');
+    const viewfinder = document.querySelector('#viewfinder');
+    const broadcast = document.querySelector('#broadcast');
+    const alertBox = document.querySelector('#incident-alert');
+    const flash = document.querySelector('#flash');
+    const shots = document.querySelector('#shots-left');
+    let shotsLeft = 8;
+
+    function photoCard(photo) {
+      return `<article class="photo-card"><img src="${photo.image}" alt="${photo.title}"><span class="sold">SOLD</span><h3>${photo.title}</h3><div class="photo-meta"><span>${photo.time}</span><strong>${photo.value}</strong></div></article>`;
+    }
+    function renderPhotos(empty = false) {
+      list.innerHTML = empty ? '<div class="empty-roll"><strong>NO FRAMES FILED</strong><span>Captured photographs arrive here after the desk reviews them.</span></div>' : photoData.map(photoCard).join('');
+      document.querySelector('#photo-count').textContent = empty ? '0 / 10' : '3 / 10';
+      document.querySelector('#roll-total').textContent = empty ? '$0' : '$1,850';
+      document.querySelector('#earnings').textContent = empty ? '$0' : '$1,850';
+    }
+    renderPhotos();
+    document.querySelector('.recap-grid').innerHTML = photoData.map(photo => `<article><img src="${photo.image}" alt="${photo.title}"><h3>${photo.title}</h3><p><span>${photo.time}</span><strong>${photo.value}</strong></p></article>`).join('');
+
+    broadcast.addEventListener('pointermove', event => {
+      const rect = broadcast.getBoundingClientRect();
+      const halfW = viewfinder.offsetWidth / 2;
+      const halfH = viewfinder.offsetHeight / 2;
+      const lowerReserve = 110;
+      const x = Math.max(halfW + 8, Math.min(rect.width - halfW - 8, event.clientX - rect.left));
+      const y = Math.max(halfH + 8, Math.min(rect.height - lowerReserve - halfH, event.clientY - rect.top));
+      viewfinder.style.left = `${x}px`;
+      viewfinder.style.top = `${y}px`;
+    });
+    broadcast.addEventListener('click', event => {
+      if (event.target.closest('.broadcast-stack')) return;
+      flash.classList.remove('on'); viewfinder.classList.remove('captured'); void flash.offsetWidth;
+      flash.classList.add('on'); viewfinder.classList.add('captured');
+      shotsLeft = Math.max(0, shotsLeft - 1); shots.textContent = shotsLeft;
+    });
+
+    document.querySelectorAll('.incident').forEach(button => button.addEventListener('click', () => {
+      document.querySelectorAll('.incident').forEach(item => { item.setAttribute('aria-pressed', 'false'); item.disabled = true; item.querySelector('.cooldown')?.remove(); });
+      button.setAttribute('aria-pressed', 'true');
+      const line = document.createElement('span'); line.className = 'cooldown'; button.append(line);
+      alertBox.textContent = `Incoming: ${button.dataset.name}`; alertBox.hidden = false;
+      window.setTimeout(() => { alertBox.hidden = true; document.querySelectorAll('.incident').forEach(item => item.disabled = false); }, 5000);
+    }));
+    document.querySelector('.dispatch').addEventListener('submit', event => {
+      event.preventDefault(); const input = document.querySelector('#custom-event');
+      alertBox.textContent = `Incoming: ${input.value.trim() || 'Custom incident'}`; alertBox.hidden = false; input.value = '';
+      window.setTimeout(() => alertBox.hidden = true, 4000);
+    });
+
+    function closeDialogs() { document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close()); }
+    document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
+    document.querySelectorAll('.prototype-bar [data-state]').forEach(button => button.addEventListener('click', () => {
+      closeDialogs();
+      document.querySelectorAll('.prototype-bar [data-state]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      const state = button.dataset.state;
+      if (state === 'briefing') document.querySelector('#briefing').showModal();
+      if (state === 'sale') document.querySelector('#sale').showModal();
+      if (state === 'recap') document.querySelector('#recap').showModal();
+      if (state === 'empty') renderPhotos(true); else renderPhotos(false);
+      if (state === 'incident') { alertBox.textContent = 'Incoming: Rubber duck'; alertBox.hidden = false; } else alertBox.hidden = true;
+    }));
+    document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); }));
+  </script>
+</body>
+</html>

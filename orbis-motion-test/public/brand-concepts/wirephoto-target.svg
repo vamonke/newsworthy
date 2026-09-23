@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Newsworthy wirephoto target concept</title>
+  <desc id="desc">A transmitted wirephoto frame with a lens target and red editorial registration marks.</desc>
+  <rect width="512" height="512" rx="104" fill="#101820"/>
+  <path d="M71 111h370v290H71Z" fill="#e8e0cf"/>
+  <path d="M71 111h370v53H71ZM71 348h370v53H71Z" fill="#d9362b"/>
+  <circle cx="256" cy="256" r="116" fill="#101820"/>
+  <circle cx="256" cy="256" r="79" fill="#d9362b"/>
+  <path d="M256 174v164M174 256h164" stroke="#e8e0cf" stroke-width="13"/>
+  <circle cx="256" cy="256" r="37" fill="#e8e0cf"/>
+  <circle cx="256" cy="256" r="16" fill="#101820"/>
+  <path d="M91 132h78M343 380h78" stroke="#101820" stroke-width="11"/>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Newsworthy shutter eye concept</title>
+  <desc id="desc">A bold eye inside a red viewfinder with a six-blade camera shutter for an iris.</desc>
+  <rect width="512" height="512" rx="104" fill="#f4f0e6"/>
+  <path d="M54 256c56-91 119-136 202-136s146 45 202 136c-56 91-119 136-202 136S110 347 54 256Z" fill="#17212b"/>
+  <path d="M112 256c40-57 88-86 144-86s104 29 144 86c-40 57-88 86-144 86s-104-29-144-86Z" fill="#f4f0e6"/>
+  <circle cx="256" cy="256" r="96" fill="#e3312b"/>
+  <g fill="none" stroke="#17212b" stroke-width="16" stroke-linecap="square">
+    <path d="M256 214h73"/>
+    <path d="m292 235 37 63"/>
+    <path d="m292 277-36 63"/>
+    <path d="M256 298h-73"/>
+    <path d="m220 277-37-63"/>
+    <path d="m220 235 36-63"/>
+  </g>
+  <path d="m256 208 42 24v48l-42 24-42-24v-48Z" fill="#17212b"/>
+  <path d="M74 178v-74h74M438 178v-74h-74M74 334v74h74M438 334v74h-74" fill="none" stroke="#e3312b" stroke-width="24"/>
+</svg>

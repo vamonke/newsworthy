@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Newsworthy captured signal concept</title>
+  <desc id="desc">A camera viewfinder locking onto a red broadcast signal and white flash.</desc>
+  <rect width="512" height="512" rx="104" fill="#154bae"/>
+  <g fill="none" stroke="#f8f4ea" stroke-width="42" stroke-linecap="square">
+    <path d="M104 212V104h108"/>
+    <path d="M300 104h108v108"/>
+    <path d="M408 300v108H300"/>
+    <path d="M212 408H104V300"/>
+  </g>
+  <circle cx="256" cy="256" r="78" fill="#e6372f"/>
+  <path d="M256 151c13 60 30 78 105 105-75 27-92 45-105 105-13-60-30-78-105-105 75-27 92-45 105-105Z" fill="#f8f4ea"/>
+</svg>
