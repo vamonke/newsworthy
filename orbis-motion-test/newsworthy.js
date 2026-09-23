@@ -72,8 +72,8 @@ tickerPause.onclick = () => {
 };
 
 // Header help reuses the existing instructions without starting another round.
-const help=document.createElement('dialog');help.id='help-dialog';help.className='np np-wide';help.setAttribute('aria-label','How to play');
+const help=document.createElement('dialog');help.id='help-dialog';help.className='np np-wide np-howto';help.setAttribute('aria-label','How to play');
 help.append($('#welcome .sheet').cloneNode(true));help.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
-const closeHelp=help.querySelector('.np-btn');closeHelp.textContent='Back to the city';closeHelp.onclick=()=>help.close();document.body.append(help);installDialogMotion(help);
+const closeHelp=help.querySelector('.np-btn');closeHelp.textContent='Close';closeHelp.onclick=()=>help.close();document.body.append(help);installDialogMotion(help);
 $('#how-to-play').onclick=()=>help.showModal();
 $('#high-scores').onclick=()=>$('#scores-dialog').showModal();
