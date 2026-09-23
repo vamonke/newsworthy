@@ -6,7 +6,7 @@ const unwrap=r=>r?.data?{...r.data,type:r.type}:r||{};
 const SESSION_KEY='newsworthy-reactor-session-v1';
 function rememberSession(sessionId,jwt){sessionStorage.setItem(SESSION_KEY,JSON.stringify({sessionId,jwt}));}
 function forgetSession(sessionId){try{const saved=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');if(!sessionId||saved?.sessionId===sessionId)sessionStorage.removeItem(SESSION_KEY);}catch{sessionStorage.removeItem(SESSION_KEY);}}
-async function cleanupRememberedSession(){let saved;try{saved=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');}catch{forgetSession();return;}if(!saved?.sessionId||!saved?.jwt){forgetSession();return;}await api('cleanup',saved);forgetSession(saved.sessionId);}
+async function cleanupRememberedSession(){let saved;try{saved=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');}catch{forgetSession();return;}if(!saved?.sessionId||!saved?.jwt){forgetSession();return;}try{await api('cleanup',saved);}catch{}finally{forgetSession(saved.sessionId);}}
 export class LiveCity{
  constructor(video,status,failure){this.video=video;this.status=status;this.failure=failure;this.closed=false;this.chain=Promise.resolve();this.state={};this.conditions=0;this.log={id:'newsworthy-'+Date.now(),model:MODEL,reference:'news-judge/busy-opening-ufo-v4.png',created:new Date().toISOString(),events:[],prompts:[]};}
  record(type,data={}){this.log.events.push({t:Date.now(),type,...data});void api('save',this.log).catch(()=>{});}
