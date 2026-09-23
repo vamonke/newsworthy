@@ -315,8 +315,8 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 @keyframes card-land { 25% { transform: scale(1.05); box-shadow: 0 0 0 3px var(--wire-money); } }
 .money-bump { display: inline-block; animation: money-bump .5s ease-out; }
 @keyframes money-bump { 40% { transform: scale(1.18); } }
-.roll-footer { padding: 0 13px; display: flex; align-items: center; justify-content: space-between; border-top: 3px solid var(--wire-ink); font: 800 8px/1 monospace; }
-.roll-footer strong { color: var(--wire-money); font: 950 24px/1 'Barlow Condensed',Impact,sans-serif; }
+.roll-footer { padding: 0 13px; display: flex; align-items: center; justify-content: space-between; border-top: 3px solid var(--wire-ink); font: 800 12px/1 monospace; }
+.roll-footer strong { color: var(--wire-money); font: 950 32px/1 'Barlow Condensed',Impact,sans-serif; }
 
 @media (max-width: 1150px) {
   .workspace { --side-min: 260px; }
