@@ -4,7 +4,7 @@ let sound = true;
 const buffers = new Map();
 const loading = new Map();
 const active = new Set();
-const clips = { shutter: 'cam_snap.mp3', news: 'breaking_news.mp3' };
+const clips = { shutter: 'wbwwb/cam_snap.mp3', news: 'wbwwb/breaking_news.mp3', count: 'money-counter.m4a' };
 const loadingClip = '/audio/helicopter-midflight-interior.m4a';
 let loadingAudio;
 
@@ -35,7 +35,7 @@ export function context() {
 }
 function load(name) {
   if (!loading.has(name)) {
-    const request = fetch(`/audio/wbwwb/${clips[name]}`)
+    const request = fetch(`/audio/${clips[name]}`)
       .then(response => {
         if (!response.ok) throw new Error(`Sound download failed: ${response.status}`);
         return response.arrayBuffer();
@@ -66,5 +66,8 @@ function play(name, volume) {
 }
 export function shutterSound() { play('shutter', .7); }
 export function moneySound() { play('news', .45); }
+// Trimmed to 1.2s; the recap count-up runs for the same length (COUNT_MS in newsworthy-motion.js).
+export function countSound() { play('count', .6); }
+export function stopCountSound() { for (const source of active) if (source.clipName === 'count') source.stop(); }
 
 export async function preloadSounds() { context(); await Promise.all(Object.keys(clips).map(load)); }

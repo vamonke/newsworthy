@@ -1,4 +1,6 @@
 import {STAR_THRESHOLDS,starsFor,starMessage} from './newsworthy-stars.js';
+import {countSound,stopCountSound} from './newsworthy-sounds.js';
+const COUNT_MS=1200;
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 export function installDialogMotion(dialog){
  if(dialog.dataset.motion)return;dialog.dataset.motion='true';
@@ -21,7 +23,7 @@ export function revealRecap(dialog,total){
  const finish=()=>{updateStars(total,false);rating.querySelector('.star-message').textContent=starMessage(total);};updateStars(0,false);
  if(reduced()){number.textContent='$'+total.toLocaleString();finish();return;}
  const animations=cards.map((card,i)=>card.animate([{opacity:0,transform:'translateY(18px) scale(.95)'},{opacity:1,transform:'none'}],{duration:280,delay:140+i*150,fill:'backwards',easing:'cubic-bezier(.16,1,.3,1)'}));
- number.textContent='$0';let frame;const start=performance.now()+140+Math.max(0,cards.length-1)*150+280;
- const cancel=()=>{cancelAnimationFrame(frame);animations.forEach(a=>a.cancel());number.textContent='$'+total.toLocaleString();finish();};dialog.addEventListener('close',cancel,{once:true});
- function tick(now){if(!dialog.open){cancel();return;}const p=Math.min(1,Math.max(0,(now-start)/1000));const value=Math.round(total*(1-(1-p)**3));number.textContent='$'+value.toLocaleString();updateStars(value);if(p===1)finish();if(p<1)frame=requestAnimationFrame(tick);else number.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:230});}frame=requestAnimationFrame(tick);
+ number.textContent='-';let frame,counting=false;const start=performance.now()+140+Math.max(0,cards.length-1)*150+280;
+ const cancel=()=>{cancelAnimationFrame(frame);stopCountSound();animations.forEach(a=>a.cancel());number.textContent='$'+total.toLocaleString();finish();};dialog.addEventListener('close',cancel,{once:true});
+ function tick(now){if(!dialog.open){cancel();return;}if(now<start){frame=requestAnimationFrame(tick);return;}if(!counting){counting=true;if(total)countSound();}const p=Math.min(1,(now-start)/COUNT_MS);const value=Math.round(total*(1-(1-p)**3));number.textContent='$'+value.toLocaleString();updateStars(value);if(p===1)finish();if(p<1)frame=requestAnimationFrame(tick);else number.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:230});}frame=requestAnimationFrame(tick);
 }
