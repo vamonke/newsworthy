@@ -76,7 +76,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   min-height: 0;
   padding: 0;
   display: grid;
-  grid-template-rows: 48px minmax(0,1fr) auto auto;
+  grid-template-rows: 48px auto minmax(0,1fr) auto auto;
   gap: 0;
   overflow: hidden;
   border: 1px solid #343b39;
@@ -136,20 +136,29 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .event-icon { flex: none; width: auto; font: 900 9px/1 'SFMono-Regular',Consolas,monospace; text-align: left; }
 .event-number { font: 500 9px/1 'SFMono-Regular',Consolas,monospace; }
 .event-label { max-width: 100%; overflow-wrap: anywhere; font: 850 15px/1.05 Barlow,Arial,sans-serif; text-transform: uppercase; letter-spacing: .2px; }
-#event-playing {
-  position: absolute;
-  z-index: 8;
-  left: 10px;
-  right: 10px;
-  bottom: 104px;
-  padding: 10px 12px;
-  color: var(--wire-ink);
-  background: var(--wire-yellow);
-  border: 2px solid var(--wire-ink);
-  box-shadow: 3px 3px 0 rgba(0,0,0,.35);
+#event-timer {
+  position: relative;
+  isolation: isolate;
+  height: 34px;
+  padding: 0 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  color: white;
+  background: var(--wire-ink);
+  font: 800 11px/1 Barlow,Arial,sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
-#event-name { display: block; font: 900 13px/1.1 Barlow,Arial,sans-serif; }
-#event-playing #cooldown { display: block; min-height: 0; margin-top: 5px; color: var(--wire-ink); font: 700 8px/1 monospace; }
+#event-timer::before { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--cooldown-fill,0%); background: var(--wire-red); z-index: -1; transition: width .2s linear; }
+#event-timer.ready { background: var(--wire-money); }
+#event-timer.ready::before { display: none; }
+#event-timer-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#event-timer-left { flex: none; }
+.event-desk.events-locked .incidents, .event-desk.events-locked #custom { opacity: .45; }
+.event-desk.events-locked .incidents button.event-cooling::before { display: none; }
 .event-desk #custom {
   min-width: 0;
   margin: 0;
