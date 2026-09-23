@@ -6,8 +6,7 @@
   "compatibility_date": "2026-09-20",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
-  // Attach once the workers.dev deploy has been playtested:
-  // "routes": [{ "pattern": "newsworthy.vamonke.com", "custom_domain": true }],
+  "routes": [{ "pattern": "newsworthy.vamonke.com", "custom_domain": true }],
   "assets": {
     "directory": "../orbis-motion-test/dist",
     "binding": "ASSETS",
@@ -26,7 +25,8 @@
     { "name": "API_LIMITER", "namespace_id": "4202", "simple": { "limit": 240, "period": 60 } }
   ],
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "newsworthy_events" }],
-  // Secrets (wrangler secret put): REACTOR_API_KEY, GEMINI_API_KEY, and later TURNSTILE_SECRET.
-  "vars": { "LIVE_SLOTS": "4", "SLOTS_PER_IP": "2", "DAILY_SESSION_CAP": "500" },
+  // Secrets (wrangler secret put): REACTOR_API_KEY, GEMINI_API_KEY, TURNSTILE_SECRET.
+  // The Turnstile widget "Newsworthy" allows newsworthy.vamonke.com, newsworthy.vamonke.workers.dev and localhost.
+  "vars": { "LIVE_SLOTS": "4", "SLOTS_PER_IP": "2", "DAILY_SESSION_CAP": "500", "TURNSTILE_SITE_KEY": "0x4AAAAAAFBfBHrEmQgwHW5g" },
   "observability": { "enabled": true }
 }
