@@ -57,6 +57,7 @@ function play(name, volume) {
     const source = a.createBufferSource(), gain = a.createGain();
     source.buffer = buffer;
     source.clipName = name;
+    source.gain = gain;
     gain.gain.value = volume;
     source.connect(gain).connect(a.destination);
     active.add(source);
@@ -70,9 +71,19 @@ export function moneySound() { play('news', .45); }
 // or null when it can't play (sound off, not loaded yet, or audio suspended); the reveal then uses wall time.
 export function wrapSound() {
   if (!sound || !buffers.has('wrap') || audio?.state !== 'running') return null;
+  fadeOut('news', .25);
   play('wrap', .7);
   const startedAt = audio.currentTime;
   return () => (audio.currentTime - startedAt) * 1000;
+}
+function fadeOut(name, seconds) {
+  const end = audio.currentTime + seconds;
+  for (const source of active) {
+    if (source.clipName !== name) continue;
+    source.gain.gain.setValueAtTime(source.gain.gain.value, audio.currentTime);
+    source.gain.gain.linearRampToValueAtTime(0, end);
+    source.stop(end);
+  }
 }
 export function stopWrapSound() { for (const source of active) if (source.clipName === 'wrap') source.stop(); }
 
