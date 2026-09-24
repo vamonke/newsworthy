@@ -5,6 +5,10 @@ import { MODEL } from './reactor.js';
 export { Gate, Round };
 
 const reply = (status, body, headers = {}) => Response.json(body, { status, headers });
+// Gemini refuses some locations ("User location is not supported for the API use."), and a Round
+// object calls it from wherever Cloudflare places the object, by default near the player. Pin rounds to
+// western North America, where Gemini works. The hint only counts when the object is first created.
+const ROUND_HINT = { locationHint: 'wnam' };
 const LIMITS = { token: 1024, session: 20_000, photo: 1_900_000, save: 2 * 1024 * 1024 };
 
 async function readJson(request, limit) {
@@ -79,12 +83,12 @@ async function api(request, env, path, ip) {
     const { jwt } = await readJson(request, LIMITS.session);
     if (typeof jwt !== 'string' || !(await gate.claimRound(jwt))) return reply(403, { error: 'Start a live session before a round.' });
     const id = env.ROUND.newUniqueId();
-    return reply(200, await env.ROUND.get(id).start(id.toString()));
+    return reply(200, await env.ROUND.get(id, ROUND_HINT).start(id.toString()));
   }
   if (path === 'news-photo') {
     const photo = await readJson(request, LIMITS.photo);
     if (typeof photo.roundId !== 'string' || !/^[0-9a-f]{64}$/.test(photo.roundId)) return reply(400, { error: 'Round expired. Start a new round.' });
-    return reply(200, await env.ROUND.get(env.ROUND.idFromString(photo.roundId)).judgePhoto(photo));
+    return reply(200, await env.ROUND.get(env.ROUND.idFromString(photo.roundId), ROUND_HINT).judgePhoto(photo));
   }
   if (path === 'save') {
     // The game posts its whole event log each time; only the newest event is recorded.
