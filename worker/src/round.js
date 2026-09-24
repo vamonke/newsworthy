@@ -13,12 +13,14 @@ export class Round extends DurableObject {
     // Rounds run near the player. If Gemini refuses this location, calls go through the US relay.
     const fetcher = withRelay((url, init) => fetch(url, init), (url, init) => relayStub(env).fetch(url, init), { always: env.GEMINI_RELAY_ALWAYS === '1' });
     this.judge = createNewsJudge(env.GEMINI_API_KEY, fetcher);
+    this.written = []; // the accepted photos as last saved, to write only new or replaced ones
     ctx.blockConcurrencyWhile(async () => {
       const meta = await ctx.storage.get('meta');
       if (!meta) return;
       const accepted = [];
       for (let i = 0; i < meta.acceptedCount; i++) accepted.push(await ctx.storage.get(`accepted:${i}`));
       this.id = meta.id;
+      this.written = [...accepted];
       this.judge.restore(meta.id, { ...meta.round, accepted });
     });
   }
@@ -26,9 +28,11 @@ export class Round extends DurableObject {
   async save() {
     const { accepted, ...round } = this.judge.snapshot(this.id);
     const entries = { meta: { id: this.id, acceptedCount: accepted.length, round } };
-    // Accepted photos are stored one per key: together they can pass the 2 MB value limit.
-    accepted.forEach((photo, i) => { entries[`accepted:${i}`] = photo; });
+    // Accepted photos are stored one per key: together they can pass the 2 MB value limit. Only new
+    // photos, or one replaced by a later shot of the same incident, are written again.
+    accepted.forEach((photo, i) => { if (this.written[i] !== photo) entries[`accepted:${i}`] = photo; });
     await this.ctx.storage.put(entries);
+    this.written = [...accepted];
   }
 
   async start(id) {
