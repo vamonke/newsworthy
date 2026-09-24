@@ -56,6 +56,17 @@
 /* The game HUD belongs to the live round; keep the camera screen clean while it loads. */
 .picture-stage:has(#connection.viewfinder-look.intro) :is(#aim, .on-air, .stats, #sound) { visibility: hidden; }
 
+/* Live aim: the real game viewfinder follows the mouse while the round loads, so players learn
+   the controls before the feed arrives. It replaces the fixed brackets and crosshair. */
+/* The viewfinder's dark surround does the dimming, so only the scanlines stay and the frame reads clear. */
+#connection.viewfinder-look.live-aim.intro { cursor: crosshair; background: repeating-linear-gradient(180deg, rgba(0,0,0,.07) 0 1px, transparent 1px 3px); }
+#connection.live-aim .vf-osd > i, #connection.live-aim .vf-cross { display: none; }
+#connection.viewfinder-look.live-aim.intro #connection-title { margin-top: 0; }
+.picture-stage:has(#connection.live-aim.intro) :is(#aim, .stats, #sound) { visibility: visible; }
+.picture-stage:has(#connection.live-aim.intro) #aim { z-index: 7; }
+.picture-stage:has(#connection.live-aim.intro) #sound { z-index: 8; }
+.picture-stage:has(#connection.live-aim.intro) #aim { pointer-events: none; }
+
 @media (max-width: 650px) {
   #connection.viewfinder-look.intro .vf-osd { inset: 12px; }
   #connection.viewfinder-look.intro #connection-title { font-size: 14px; margin-top: 60px; }
