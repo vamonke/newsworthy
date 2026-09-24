@@ -74,10 +74,11 @@ async function api(request, env, path, ip) {
   }
   if (path === 'save') {
     // The game posts its whole event log each time; only the newest event is recorded.
+    // blob1 = event type, blob2 = command, blob3 = error message (photo_failed).
     const log = await readJson(request, LIMITS.save);
     const event = log.events?.at?.(-1);
     if (env.EVENTS && typeof log.id === 'string' && event?.type) {
-      env.EVENTS.writeDataPoint({ indexes: [log.id.slice(0, 96)], blobs: [String(event.type).slice(0, 64), String(event.command || '').slice(0, 64)], doubles: [Number(event.queueMs ?? event.ackMs ?? 0)] });
+      env.EVENTS.writeDataPoint({ indexes: [log.id.slice(0, 96)], blobs: [String(event.type).slice(0, 64), String(event.command || '').slice(0, 64), String(event.error || '').slice(0, 200)], doubles: [Number(event.queueMs ?? event.ackMs ?? 0)] });
     }
     return reply(200, { saved: true });
   }
@@ -92,7 +93,11 @@ export default {
     if (url.pathname.startsWith('/api/')) {
       const ip = request.headers.get('CF-Connecting-IP') || 'local';
       try { return await api(request, env, url.pathname.slice(5), ip); }
-      catch (error) { return reply(502, { error: error?.message || 'Something went wrong' }); }
+      catch (error) {
+        // Workers Logs keeps this; the player only sees the short message.
+        console.error(`/api/${url.pathname.slice(5)} failed:`, error?.message, error?.detail || '', error?.stack || '');
+        return reply(502, { error: error?.message || 'Something went wrong' });
+      }
     }
     if (url.pathname === '/') return env.ASSETS.fetch(new Request(new URL('/news-design.html', url), request));
     return env.ASSETS.fetch(request);

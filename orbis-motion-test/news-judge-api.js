@@ -11,17 +11,19 @@ const instruction=`You buy fictional news helicopter photographs in an arcade ga
 // Gemini's OpenAI-compatible endpoint, called directly: measured ~0.5s faster per photo than the fal → OpenRouter route.
 const JUDGE_URL='https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',JUDGE_TIMEOUT=30000;
 const photoData=/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/;
+// A short player-facing error that also carries what went wrong, for the server logs.
+const fail=(message,detail)=>Object.assign(new Error(message),{detail});
 // One judge attempt: streamed from the router, parsed and validated, so an unreadable reply counts as a failed attempt.
 async function ask(key,fetcher,content,accepted,signal){
  const response=await fetcher(JUDGE_URL,{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},signal,body:JSON.stringify({model:'gemini-3.5-flash-lite',temperature:0,max_tokens:400,stream:true,reasoning_effort:'minimal',messages:[{role:'system',content:instruction},{role:'user',content}],response_format:{type:'json_schema',json_schema:{name:'news_photo',strict:true,schema}}})});
- if(!response.ok)throw new Error(`Editor unavailable (${response.status}). Retry this photo.`);
+ if(!response.ok){const body=await Promise.resolve(response.text?.()).catch(()=>'')||'';throw fail(`Editor unavailable (${response.status}). Retry this photo.`,`HTTP ${response.status}: ${body.slice(0,300)}`);}
  let text='';
  if(/event-stream/.test(response.headers?.get?.('content-type')||'')){
   const decoder=new TextDecoder();let buffer='';
   for await(const chunk of response.body){buffer+=decoder.decode(chunk,{stream:true});let i;while((i=buffer.indexOf('\n'))>=0){const line=buffer.slice(0,i).trim();buffer=buffer.slice(i+1);if(!line.startsWith('data:')||line==='data: [DONE]')continue;try{text+=JSON.parse(line.slice(5)).choices?.[0]?.delta?.content||'';}catch{}}}
  }else{try{text=(await response.json()).choices[0].message.content;}catch{}}
- let v;try{v=JSON.parse(text);}catch{throw new Error('Editor response unreadable. Retry this photo.');}
- if(!['ordinary','fire','flood','ufo','creature','parade','crash','other'].includes(v.event_type)||!['event_strength','clarity','spectacle'].every(k=>Number.isInteger(v[k])&&v[k]>=0&&v[k]<=4)||!Number.isInteger(v.previous_index)||v.previous_index< -1||v.previous_index>=accepted||typeof v.headline!=='string'||typeof v.reason!=='string')throw new Error('Editor response invalid. Retry this photo.');
+ let v;try{v=JSON.parse(text);}catch{throw fail('Editor response unreadable. Retry this photo.',`unparseable output (${(response.headers?.get?.('content-type')||'?')}): ${text.slice(0,300)||'(empty)'}`);}
+ if(!['ordinary','fire','flood','ufo','creature','parade','crash','other'].includes(v.event_type)||!['event_strength','clarity','spectacle'].every(k=>Number.isInteger(v[k])&&v[k]>=0&&v[k]<=4)||!Number.isInteger(v.previous_index)||v.previous_index< -1||v.previous_index>=accepted||typeof v.headline!=='string'||typeof v.reason!=='string')throw fail('Editor response invalid. Retry this photo.',`output failed validation: ${text.slice(0,300)}`);
  return v;
 }
 // Judge latency has a long tail (≈1 in 60 calls over 6s). Send one backup request after backupAfter ms,
@@ -34,7 +36,8 @@ function hedged(attempt,backupAfter){
    attempt(AbortSignal.any([controller.signal,AbortSignal.timeout(JUDGE_TIMEOUT)])).then(v=>{
     if(settled)return;settled=true;clearTimeout(timer);controllers.forEach(c=>c.abort());resolve({v,attempt:n});
    },e=>{
-    running--;if(settled)return;lastError=e.name==='TimeoutError'?new Error('Editor took too long. Retry this photo.'):e;
+    running--;if(settled)return;lastError=e?.name==='TimeoutError'?fail('Editor took too long. Retry this photo.',`timed out after ${JUDGE_TIMEOUT}ms`):e?.name==='AbortError'?fail('Editor request was cancelled. Retry this photo.','aborted before timeout'):e;
+    console.error(`[judge] attempt ${n} failed: ${lastError?.name}: ${lastError?.message} ${lastError?.detail||''}`);
     if(controllers.length<2){clearTimeout(timer);launch();}else if(!running){settled=true;reject(lastError);}
    });
   };
