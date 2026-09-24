@@ -1,4 +1,4 @@
-import {optionsFor} from './newsworthy-events.js';
+import {EVENTS} from './newsworthy-events.js';
 // Photos of something the player invented pay extra. The judge only sees pixels, so "invented" means its
 // headline names nothing the player could have bought from the event desk or found in the opening scene.
 // Any match means no bonus: a miss costs the player a bonus rather than paying 1.5× for a preset.
@@ -17,7 +17,7 @@ export const PRESET_WORDS={
 };
 // Every round opens on a burning crashed car, a rubber duck and a UFO (newsworthy-stream.js); fire and smoke also linger after strikes.
 export const OPENING_WORDS=/\b(fire\w*|flames?|aviation|fiery|blaz\w*|burn\w*|ablaze|infern\w*|engulf\w*|ignit\w*|smok\w*|smould\w*|smold\w*|crash\w*|collisions?|accidents?|wreck\w*|pile-?ups?|ducks?|rubber)\b/;
-const OFFERED=[...new Set([0,1].flatMap(t=>optionsFor(t).map(e=>e.id)))];
+const OFFERED=EVENTS.map(e=>e.id);
 // Returns the preset (or 'opening') the text names, or null when it names none of them.
 export function presetIn(text,offered=OFFERED){
  const t=String(text).toLowerCase();

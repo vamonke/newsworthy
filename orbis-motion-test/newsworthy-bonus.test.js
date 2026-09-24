@@ -5,9 +5,9 @@ const custom=[
  ['Street Flooding Submerges Vehicles','Visible standing water covers a roadway surrounding vehicles.'],
  ['Bright rainbow appears over city','An unusual bright rainbow spans across the sky above city buildings.'],
  ['Red spherical object spotted near high-rise building','A strange red orb-like object is hovering near a skyscraper, distinct from the previous vehicle fires.'],
- ['Giant pastry blocks city street','The giant donut-like object from previous photo 1 has shifted position.'],
 ];
 const preset=[
+ ['Giant pastry blocks city street','The giant donut-like object from previous photo 1 has shifted position.'],
  ['Saucer hovers over city street','A silver disc hangs above traffic.'],
  ['UFO Hovers Over City Street With Blue Beam','The craft shines down onto one lane.'],
  ['Vehicle Fire Blazes on City Street','Flames and smoke rise from a car.'],
@@ -20,7 +20,7 @@ const preset=[
 ];
 test('invented subjects count as custom',()=>{for(const [headline,reason] of custom)assert.equal(isCustom({headline,reason}),true,headline);});
 test('presets, their aftermath and the opening scene never count as custom',()=>{for(const [headline,reason] of preset)assert.equal(isCustom({headline,reason}),false,headline);});
-test('only presets offered on the event desk block the bonus',()=>{assert.equal(presetIn('Giant robot stomps downtown'),null);assert.equal(presetIn('Giant robot stomps downtown',['robot']),'robot');});
+test('every preset on the event desk blocks the bonus',()=>{assert.equal(presetIn('Giant robot stomps downtown',['ufo']),null);assert.equal(presetIn('Giant robot stomps downtown'),'robot');});
 const image=n=>'data:image/jpeg;base64,'+Buffer.from('photo'+n).toString('base64');
 const reply=v=>({ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(v)}}]})});
 const verdict=(headline,previous_index=-1,strength=2)=>({event_type:'other',event_strength:strength,clarity:4,spectacle:2,headline,reason:'Clearly visible.',previous_index});
