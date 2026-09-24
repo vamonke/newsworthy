@@ -84,6 +84,7 @@ The dashboard can do all of these under Workers & Pages → newsworthy.
 - Workers Logs and metrics are in the dashboard, because `observability` is on.
 - `curl -s https://newsworthy.vamonke.com/api/status` shows slots in use.
 - Game events go to the Analytics Engine dataset `newsworthy_events`: index1 = run id, blob1 = event type, blob2 = command, blob3 = error message, double1 = ms.
+- **Analytics Engine samples these rows**, so a round's events can be missing and plain counts undercount. Each row's `_sample_interval` says how many events it stands for: use `sum(_sample_interval)` for totals, and don't expect a complete timeline for one round. For an exact record of one round, use Workers Logs or `wrangler tail`.
 - **Failed photo reviews** ("Couldn't review this photo") are recorded as `photo_failed` events, with the message players saw in blob3: `SELECT timestamp, index1, blob3 FROM newsworthy_events WHERE blob1='photo_failed' ORDER BY timestamp DESC`. The cause is in Workers Logs. Each failed Gemini attempt logs `[judge] attempt N failed: …` from the Round Durable Object, with the HTTP status and the start of the body, a timeout, a cancel, or the unreadable or invalid output. Every `/api` error also logs `/api/<path> failed: …` before its 502.
 
 ## Bot protection
