@@ -102,8 +102,6 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   font: 950 22px/1 'Barlow Condensed',Impact,sans-serif;
   letter-spacing: -.2px;
 }
-.event-desk h2 small { display: flex; align-items: center; font: 700 8px/1 Barlow,Arial,sans-serif; letter-spacing: .45px; }
-.event-desk h2 small i { width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: var(--wire-red); }
 .event-desk .incidents {
   min-height: 0;
   display: grid;
