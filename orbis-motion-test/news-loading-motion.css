@@ -1,0 +1,34 @@
+/* Loading screen that visibly moves while the live round starts (see newsworthy-loading.js).
+   Scoped to #connection.tuning: the opening still gently hunts for focus under light static and a status card. */
+#connection.tuning { cursor: crosshair; background: none; }
+#connection.tuning .vf-osd, #connection.tuning #connection-title { display: none; }
+/* The broadcast frame (live badge, clock, earnings) stays up so the wait already feels like the show.
+   The aim box stays too (under the card) so players learn they steer it. */
+.picture-stage:has(#connection.tuning) :is(.on-air, .stats) { visibility: visible; z-index: 7; }
+.picture-stage:has(#connection.tuning) #aim { visibility: visible; z-index: 5; pointer-events: none; }
+.picture-stage:has(#connection.tuning) #sound { z-index: 8; }
+
+/* The lens hunts for focus: soft, then nearly sharp, then soft again. */
+.picture-stage:has(#connection.tuning) #opening-scene { animation: lens-hunt 3.6s ease-in-out infinite; }
+@keyframes lens-hunt {
+  0%, 100% { filter: blur(3px) saturate(.7) brightness(.88); }
+  50% { filter: blur(.8px) saturate(.7) brightness(.88); }
+}
+
+/* Light TV static over the picture, drawn by newsworthy-loading.js. */
+#connection .tv-noise { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .06; mix-blend-mode: screen; pointer-events: none; }
+
+/* Centre status card */
+#connection .load-card { position: relative; display: grid; justify-items: center; gap: 12px; padding: 18px 28px; min-width: min(320px, 86%); background: rgba(10,14,14,.66); color: #f4f4ec; }
+#connection .load-card strong { font: 700 15px/1.2 'Space Mono', monospace; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; }
+#connection .load-card small { font: 400 11px/1.4 'Space Mono', monospace; letter-spacing: .5px; color: rgba(244,244,236,.78); text-align: center; white-space: nowrap; }
+#connection .load-card small.tip-in { animation: tip-in .35s ease-out; }
+@keyframes tip-in { from { opacity: 0; transform: translateY(4px); } }
+#connection .load-bar { width: 100%; height: 4px; background: rgba(244,244,236,.16); overflow: hidden; }
+#connection .load-bar i { display: block; height: 100%; width: 0; background: #e6372f; transition: width .4s ease-out; }
+
+@media (max-width: 650px) {
+  #connection .load-card { padding: 14px 16px; gap: 9px; }
+  #connection .load-card strong { font-size: 13px; }
+  #connection .load-card small { white-space: normal; }
+}
