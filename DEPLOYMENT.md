@@ -46,8 +46,9 @@ These are set on the Worker with `wrangler secret`, never committed:
 - `REACTOR_API_KEY`
 - `GEMINI_API_KEY`
 - `TURNSTILE_SECRET`: from the Turnstile widget "Newsworthy", which allows `newsworthy.vamonke.com`, `newsworthy.vamonke.workers.dev` and `localhost`. The site key is public and lives in `wrangler.jsonc`.
+- `TURNSTILE_BYPASS`: a secret pass that skips Turnstile, so agents' test browsers (which Turnstile blocks) can play in production. Open the game once with `?pass=<value>`; the tab keeps it and removes it from the address bar. The value is in `worker/.dev.vars`. Live-slot and rate limits still apply. To revoke it, run `npx wrangler secret delete TURNSTILE_BYPASS`, or `put` a new value.
 
-For local runs, the same three keys go in `worker/.dev.vars`, which git ignores. The Reactor and Gemini values are also in the root `.env.local`.
+For local runs, the same keys go in `worker/.dev.vars`, which git ignores. The Reactor and Gemini values are also in the root `.env.local`.
 
 ## Deploy
 

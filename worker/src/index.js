@@ -14,8 +14,16 @@ async function readJson(request, limit) {
 }
 
 // Cloudflare Turnstile. Enforced only when TURNSTILE_SECRET is set; /api/status then gives the game the site key.
-async function human(env, token, ip) {
+// A matching secret pass (TURNSTILE_BYPASS) skips it, so a test browser that Turnstile blocks can still play.
+async function samePass(pass, secret) {
+  if (typeof pass !== 'string' || !secret || pass.length > 200) return false;
+  const [a, b] = await Promise.all([pass, secret].map((v) => crypto.subtle.digest('SHA-256', new TextEncoder().encode(v))));
+  return crypto.subtle.timingSafeEqual(a, b);
+}
+
+async function human(env, token, ip, pass) {
   if (!env.TURNSTILE_SECRET) return true;
+  if (await samePass(pass, env.TURNSTILE_BYPASS)) { console.log('Turnstile skipped with the secret pass'); return true; }
   if (typeof token !== 'string' || !token) return false;
   const form = new FormData();
   form.append('secret', env.TURNSTILE_SECRET); form.append('response', token); form.append('remoteip', ip);
@@ -40,7 +48,7 @@ async function api(request, env, path, ip) {
     // ticket, so only a first request counts toward the new-round limit and needs the bot check.
     const ticket = typeof body.ticket === 'string' && body.ticket.length <= 64 ? body.ticket : null;
     if (!ticket && env.TOKEN_LIMITER && !(await env.TOKEN_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many new rounds. Wait a minute and try again.' });
-    if (!ticket && !(await human(env, body.turnstile, ip))) return reply(403, { error: 'The bot check didn’t go through. Try again.' });
+    if (!ticket && !(await human(env, body.turnstile, ip, body.pass))) return reply(403, { error: 'The bot check didn’t go through. Try again.' });
     const result = await gate.open(ip, ticket);
     if (result.jwt) return reply(200, { jwt: result.jwt });
     // This wording keeps the game's "stop the previous session" button working.
