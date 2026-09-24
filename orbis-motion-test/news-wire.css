@@ -306,8 +306,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 }
 .roll-title { padding: 0 13px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--wire-line); font: 950 21px/1 'Barlow Condensed',Impact,sans-serif; letter-spacing: -.2px; }
 .roll-title b { color: var(--wire-ink); font: 700 9px/1 monospace; }
-/* Tall enough for one row of two photos (newest first); older ones scroll. */
-#photos { height: calc((100cqw - 34px) / 2 * 9 / 16 + 58px); min-height: 0; padding: 8px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; align-content: start; overflow: auto; scrollbar-width: thin; }
+/* Tall enough for one row of two photos (newest first); older ones scroll.
+   Photo width is half the roll less the padding, gap and card frame; 67px is the padding, frame and headline.
+   Any shorter and the row overflows by a hair, so the scrollbar flickers on and off. */
+#photos { height: calc((100cqw - 52px) / 2 * 9 / 16 + 67px); min-height: 0; padding: 8px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; align-content: start; overflow: auto; scrollbar-width: thin; }
 #photos:has(.empty) { display: block; }
 .roll .empty { height: 100%; padding: 0 14px; display: grid; align-content: center; justify-items: center; gap: 9px; color: #6c6d67; text-align: center; }
 .roll .empty > span { color: var(--wire-ink); font: 900 14px/1 'Barlow Condensed',Impact,sans-serif; }
@@ -326,8 +328,11 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .roll .photo.reviewing img { filter: grayscale(.55) brightness(.7); }
 .roll .photo.reviewing h3 { color: var(--wire-muted); }
 .roll .photo.failed img { filter: grayscale(1) brightness(.6); }
-.roll .photo.landed { animation: card-land .9s ease-out; }
-@keyframes card-land { 25% { transform: scale(1.05); box-shadow: 0 0 0 3px var(--wire-money); } }
+/* When the price lands only the SOLD stamp moves: it thumps down onto the photo.
+   The photo clips it, so it can't stick out of the roll and flash a scrollbar. */
+.roll .roll-photo-image { overflow: hidden; }
+.roll .photo.landed .roll-photo-image::after { animation: stamp-in .4s cubic-bezier(.3,1.4,.5,1) both; }
+@keyframes stamp-in { from { opacity: 0; transform: rotate(-8deg) scale(1.9); } 60% { opacity: 1; } }
 .money-bump { display: inline-block; animation: money-bump .5s ease-out; }
 @keyframes money-bump { 40% { transform: scale(1.18); } }
 .roll-footer { padding: 0 13px; display: flex; align-items: center; justify-content: space-between; border-top: 3px solid var(--wire-ink); font: 800 12px/1 monospace; }
