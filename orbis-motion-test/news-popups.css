@@ -203,3 +203,10 @@ dialog#photo-detail.np:not(#_) { width: min(860px,90vw); }
 .price-slip::before { content: ''; position: absolute; inset: 0; z-index: -1; filter: url(#np-rough-edge); background: linear-gradient(rgba(222,229,228,.52),rgba(222,229,228,.52)), var(--wire-paper) var(--wire-texture) center/cover; background-blend-mode: normal, multiply; box-shadow: inset 0 0 30px rgba(52,43,25,.14); }
 .price-slip h4 { flex: 1; margin: 0; color: var(--wire-ink); font: 900 18px/1 var(--np-cond); text-transform: uppercase; }
 .price-slip strong { color: var(--wire-money); font: 900 36px/.9 var(--np-cond); white-space: nowrap; }
+
+/* How it works: header popup crediting the live video and photo grading models */
+#about.np:not(#_) .np-body { margin-top: clamp(18px,2vw,28px); color: var(--wire-ink); font-size: clamp(14px,1.25vw,18px); line-height: 1.55; }
+#about.np:not(#_) .np-body + .np-body { margin-top: clamp(12px,1.2vw,16px); }
+#about .np-body b, #about .np-body a { font-weight: 700; }
+#about .np-body a { color: inherit; text-decoration: underline 2px; text-underline-offset: 3px; }
+#about .np-body a:hover { color: var(--wire-red); }

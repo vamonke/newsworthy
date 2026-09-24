@@ -72,10 +72,5 @@ tickerPause.onclick = () => {
   tickerPause.textContent = paused ? '▶' : 'Ⅱ';
 };
 
-// Header help reuses the existing instructions without starting another round.
-const help=document.createElement('dialog');help.id='help-dialog';help.className='np np-wide np-howto';help.setAttribute('aria-label','How to play');
-help.append($('#welcome .sheet').cloneNode(true));help.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
-const closeHelp=help.querySelector('.np-btn');closeHelp.textContent='Close';closeHelp.onclick=()=>help.close();document.body.append(help);installDialogMotion(help);
-// The welcome popup already shows these rules, so the header link waits until it's gone.
-$('#how-to-play').onclick=()=>{if(!$('#welcome').open)help.showModal();};
+$('#how-it-works').onclick=()=>$('#about').showModal();
 $('#high-scores').onclick=()=>$('#scores-dialog').showModal();
