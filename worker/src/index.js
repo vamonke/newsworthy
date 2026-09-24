@@ -61,6 +61,9 @@ async function api(request, env, path, ip) {
   }
   if (path === 'stop-sessions') { await gate.stopIp(ip); return reply(200, { stopped: true }); }
   if (path === 'news-round') {
+    // Only a live session (handed out after the bot check) can open a round, once.
+    const { jwt } = await readJson(request, LIMITS.session);
+    if (typeof jwt !== 'string' || !(await gate.claimRound(jwt))) return reply(403, { error: 'Start a live session before a round.' });
     const id = env.ROUND.newUniqueId();
     return reply(200, await env.ROUND.get(id).start(id.toString()));
   }

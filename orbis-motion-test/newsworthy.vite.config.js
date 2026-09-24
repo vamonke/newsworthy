@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
   const newsJudge = createNewsJudge(geminiKey);
   const sessions = new Map();
   const issued = new Set();
+  const rounds = new Set();
   // Each round opens its own Reactor session, so 4 minutes covers loading plus the 2-minute round.
   // Reactor ends the session itself at this limit; our cleanup timer is the backstop.
   const SESSION_SECONDS = 240;
@@ -52,7 +53,12 @@ export default defineConfig(({ mode }) => {
             if (req.method !== 'POST') return next();
             // Local dev API: reject cross-origin writes.
             if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return send(res, 403, { error: 'Invalid origin' });
-            if (path === '/news-round') return send(res, 200, newsJudge.create());
+            if (path === '/news-round') {
+              // As in production: one round per live-session token.
+              const { jwt } = JSON.parse(await body(req, 20000) || '{}');
+              if (!issued.has(jwt) || rounds.has(jwt)) return send(res, 403, { error: 'Start a live session before a round.' });
+              rounds.add(jwt); return send(res, 200, newsJudge.create());
+            }
             if (path === '/news-photo') return send(res, 200, await newsJudge.judge(JSON.parse(await body(req, 1900000))));
             if (path === '/stop-sessions') { await Promise.all([...sessions].map(([id, s]) => cleanup(id, s.jwt))); return send(res,200,{stopped:true}); }
             if (path === '/token') {
@@ -66,7 +72,7 @@ export default defineConfig(({ mode }) => {
               const value = await reply.json();
               if (!reply.ok || !value.jwt) return send(res, reply.status || 502, { error: `Reactor token request failed (${reply.status})` });
               issued.add(value.jwt);
-              setTimeout(() => issued.delete(value.jwt), 20 * 60 * 1000).unref();
+              setTimeout(() => { issued.delete(value.jwt); rounds.delete(value.jwt); }, 20 * 60 * 1000).unref();
               return send(res, 200, { jwt: value.jwt });
             }
             if (path === '/session' || path === '/cleanup') {

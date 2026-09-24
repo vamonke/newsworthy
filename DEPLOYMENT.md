@@ -15,7 +15,8 @@ Browser ──HTTPS──▶ Worker "newsworthy" (worker/src/index.js)
    │                 ├─ /api/token, /session, /cleanup, /stop-sessions ─▶ Gate Durable Object (one for the whole game)
    │                 ├─ /api/news-round, /news-photo ─▶ Round Durable Object (one per round) ─▶ Gemini API
    │                 ├─ /api/save ─▶ Analytics Engine dataset "newsworthy_events"
-   │                 └─ Turnstile check + rate limits before a live slot is given out
+   │                 └─ Turnstile check + rate limits before a live slot is given out;
+   │                    a round (and so the photo judge) needs that live slot's token
    └──WebRTC video, straight to Reactor (never through Cloudflare)
 ```
 
@@ -23,14 +24,14 @@ Reactor (live video) and Gemini (photo judge) are the only services outside Clou
 
 | Piece | File | What it does |
 |---|---|---|
-| Router | `worker/src/index.js` | Serves the game, handles `/api/*`, checks the origin, rate limits (6 new rounds a minute and 240 API calls a minute per address) and Turnstile. `/` serves `news-design.html`. |
+| Router | `worker/src/index.js` | Serves the game, handles `/api/*`, checks the origin, rate limits (6 new rounds a minute and 240 API calls a minute per address) and Turnstile. `/api/news-round` needs the live-session token from `/api/token` and opens one round per token, so the photo judge sits behind the same Turnstile check. `/` serves `news-design.html`. |
 | Gate | `worker/src/gate.js`, logic in `gate-core.js` | 4 live slots and a first-come-first-served line. Each address can hold 2 places. A waiting ticket expires after 15 s without a check-in. A token that never starts a session loses its slot after 90 s. A session keeps its slot for 240 s + 15 s, then the Gate's alarm ends it with Reactor. There's a cap of 500 sessions a day. "Stop previous session" ends only the caller's own sessions. |
 | Round | `worker/src/round.js` | Runs `createNewsJudge` from `orbis-motion-test/news-judge-api.js` for one round and saves after every photo (`snapshot`/`restore`), because idle Durable Objects are dropped from memory. Stored for 1 hour. |
 | Reactor client | `worker/src/reactor.js` | Mints tokens with `max_sessions: 1` and `max_session_duration_seconds: 240`, and deletes sessions. |
 | Config | `worker/wrangler.jsonc` | Bindings, the custom domain route, the vars `LIVE_SLOTS`, `SLOTS_PER_IP`, `DAILY_SESSION_CAP` and `TURNSTILE_SITE_KEY`. |
 | Deploy filter | `orbis-motion-test/public/.assetsignore` | Keeps unused public files (brand concepts, old opening images, `preview.webm`) out of the upload. |
 
-The local Vite dev server (`orbis-motion-test/newsworthy.vite.config.js`) still has its own in-memory copy of the API for local play. It allows one session at a time and has no line or Turnstile. Changes to the API usually need making in both places.
+The local Vite dev server (`orbis-motion-test/newsworthy.vite.config.js`) still has its own in-memory copy of the API for local play. It allows one session at a time and has no line or Turnstile, but `/news-round` also needs a token from `/token`. Changes to the API usually need making in both places.
 
 ## Limits that drive the design
 

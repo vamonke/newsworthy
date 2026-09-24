@@ -104,6 +104,15 @@ export function register(state, jwt, sessionId, now, limits = LIMITS) {
   return true;
 }
 
+// A live session may open one photo round. Since only a player who passed the bot check gets a
+// session, this keeps the photo judge behind the same check.
+export function claimRound(state, jwt) {
+  const hit = byJwt(state, jwt);
+  if (!hit || hit[1].round) return false;
+  hit[1].round = true;
+  return true;
+}
+
 export function release(state, jwt) {
   const hit = byJwt(state, jwt);
   if (!hit) return null;

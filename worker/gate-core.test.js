@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, release, releaseIp, nextWake } from './src/gate-core.js';
+import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, claimRound, release, releaseIp, nextWake } from './src/gate-core.js';
 
 const open = (state, ip, now = 0) => { const r = reserve(state, ip, now); if (r.ticket) attach(state, r.ticket, `jwt-${r.ticket}`); return r; };
 const jwtOf = (r) => `jwt-${r.ticket}`;
@@ -148,4 +148,16 @@ test('with nobody waiting a newcomer takes a free slot at once', () => {
   const s = emptyState();
   assert.ok(admit(s, 'a', null, 0).ticket);
   assert.equal(s.line.length, 0);
+});
+
+test('a live session can open one round, and only while it holds a slot', () => {
+  const s = emptyState();
+  const { ticket } = admit(s, 'a', null, 0);
+  assert.equal(claimRound(s, 'jwt-a'), false);
+  attach(s, ticket, 'jwt-a');
+  assert.equal(claimRound(s, 'nope'), false);
+  assert.equal(claimRound(s, 'jwt-a'), true);
+  assert.equal(claimRound(s, 'jwt-a'), false);
+  release(s, 'jwt-a');
+  assert.equal(claimRound(s, 'jwt-a'), false);
 });

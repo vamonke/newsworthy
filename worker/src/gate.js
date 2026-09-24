@@ -1,5 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
-import { LIMITS, emptyState, sweep, sweepLine, admit, attach, register, release, releaseIp, nextWake } from './gate-core.js';
+import { LIMITS, emptyState, sweep, sweepLine, admit, attach, register, claimRound, release, releaseIp, nextWake } from './gate-core.js';
 import { mintToken, endSession } from './reactor.js';
 
 // One instance for the whole game: it decides who gets one of the live slots.
@@ -46,6 +46,12 @@ export class Gate extends DurableObject {
 
   async register(sessionId, jwt) {
     const ok = register(this.state, jwt, sessionId, Date.now(), this.limits);
+    if (ok) await this.save();
+    return ok;
+  }
+
+  async claimRound(jwt) {
+    const ok = claimRound(this.state, jwt);
     if (ok) await this.save();
     return ok;
   }
