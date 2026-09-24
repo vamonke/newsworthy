@@ -25,8 +25,8 @@ const image=n=>'data:image/jpeg;base64,'+Buffer.from('photo'+n).toString('base64
 const reply=v=>({ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(v)}}]})});
 const verdict=(headline,previous_index=-1,strength=2)=>({event_type:'other',event_strength:strength,clarity:4,spectacle:2,headline,reason:'Clearly visible.',previous_index});
 test('custom photos pay 1.5×, repeats and duplicates keep the bonus at half rate',async()=>{const answers=[verdict('Giant dinosaur roars'),verdict('Giant dinosaur roars',0)];let n=0;const j=createNewsJudge('test',async()=>reply(answers[n++]));const {roundId}=j.create();
- const first=await j.judge({roundId,photoId:'shot-1',image:image(1),custom:true});assert.equal(first.value,500);assert.equal(first.earned,750);assert.equal(first.custom,true);assert.match(first.reason,/^Exclusive · 1\.5× \(\$500 → \$750\)\./);
- const repeat=await j.judge({roundId,photoId:'shot-2',image:image(2),custom:true});assert.equal(repeat.earned,375);assert.match(repeat.reason,/^Another shot of this story · 50% rate \(\$750 → \$375\)\./);
+ const first=await j.judge({roundId,photoId:'shot-1',image:image(1),custom:true});assert.equal(first.value,500);assert.equal(first.earned,750);assert.equal(first.custom,true);assert.match(first.reason,/^Exclusive · 1\.5× \(\$500 to \$750\)\./);
+ const repeat=await j.judge({roundId,photoId:'shot-2',image:image(2),custom:true});assert.equal(repeat.earned,375);assert.match(repeat.reason,/^Another shot of this story · 50% rate \(\$750 to \$375\)\./);
  const duplicate=await j.judge({roundId,photoId:'shot-3',image:image(1),custom:true});assert.equal(duplicate.earned,375);assert.equal(duplicate.total,1500);});
 test('preset photos and empty streets get no bonus',async()=>{const answers=[verdict('UFO hovers over city street'),verdict('Nothing newsworthy yet',-1,0)];let n=0;const j=createNewsJudge('test',async()=>reply(answers[n++]));const {roundId}=j.create();
  const ufo=await j.judge({roundId,photoId:'shot-1',image:image(1),custom:true});assert.equal(ufo.earned,500);assert.equal(ufo.custom,false);assert.equal(ufo.reason,'Clearly visible.');
