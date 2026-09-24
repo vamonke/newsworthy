@@ -77,6 +77,9 @@ dialog#welcome.np:not(#_):not(:modal) { position: fixed; inset: 0; margin: auto;
 @media (min-width: 761px) {
   dialog#welcome.np:not(#_):not(:modal) { top: 64px; max-height: calc(100dvh - 88px); }
   body:has(dialog#welcome[open]:not(:modal)) .masthead { position: relative; z-index: 1001; }
+  /* Modal popups also leave the masthead uncovered: the sheet centres below it and the shade starts under it. */
+  dialog.np:not(#_):modal { top: 64px; max-height: calc(100dvh - 88px); }
+  dialog.np:not(#_):modal::backdrop { top: 64px; }
 }
 
 /* Photo sold / photo detail */
