@@ -1,6 +1,6 @@
 # Newsworthy
 
-A live-video news photography game: create incidents, frame photos, and sell them to an AI news editor. Two minutes, ten photos.
+A live-video news photography game: create incidents, frame photos, and sell them to an AI news editor. Two minutes, 12 photos.
 
 Play it at https://newsworthy.vamonke.com.
 
