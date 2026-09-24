@@ -16,10 +16,15 @@
   "durable_objects": {
     "bindings": [
       { "name": "GATE", "class_name": "Gate" },
-      { "name": "ROUND", "class_name": "Round" }
+      { "name": "ROUND", "class_name": "Round" },
+      // Forwards Gemini calls from the US for rounds whose location Gemini refuses (src/relay.js).
+      { "name": "GEMINI_RELAY", "class_name": "GeminiRelay" }
     ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Gate", "Round"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Gate", "Round"] },
+    { "tag": "v2", "new_sqlite_classes": ["GeminiRelay"] }
+  ],
   "ratelimits": [
     { "name": "TOKEN_LIMITER", "namespace_id": "4201", "simple": { "limit": 6, "period": 60 } },
     { "name": "API_LIMITER", "namespace_id": "4202", "simple": { "limit": 240, "period": 60 } }

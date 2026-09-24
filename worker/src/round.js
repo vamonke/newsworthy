@@ -1,5 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { createNewsJudge } from '../../orbis-motion-test/news-judge-api.js';
+import { withRelay } from './relay-core.js';
+import { relayStub } from './relay.js';
 
 const KEEP_MS = 60 * 60 * 1000;
 
@@ -8,7 +10,9 @@ const KEEP_MS = 60 * 60 * 1000;
 export class Round extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
-    this.judge = createNewsJudge(env.GEMINI_API_KEY);
+    // Rounds run near the player. If Gemini refuses this location, calls go through the US relay.
+    const fetcher = withRelay((url, init) => fetch(url, init), (url, init) => relayStub(env).fetch(url, init), { always: env.GEMINI_RELAY_ALWAYS === '1' });
+    this.judge = createNewsJudge(env.GEMINI_API_KEY, fetcher);
     ctx.blockConcurrencyWhile(async () => {
       const meta = await ctx.storage.get('meta');
       if (!meta) return;

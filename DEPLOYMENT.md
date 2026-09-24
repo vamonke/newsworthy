@@ -14,6 +14,7 @@ Browser ──HTTPS──▶ Worker "newsworthy" (worker/src/index.js)
    │                 ├─ Static Assets: the Vite build (orbis-motion-test/dist)
    │                 ├─ /api/token, /session, /cleanup, /stop-sessions ─▶ Gate Durable Object (one for the whole game)
    │                 ├─ /api/news-round, /news-photo ─▶ Round Durable Object (one per round) ─▶ Gemini API
+   │                 │                                   (via GeminiRelay in the US if Gemini refuses the round's location)
    │                 ├─ /api/save ─▶ Analytics Engine dataset "newsworthy_events"
    │                 └─ Turnstile check + rate limits before a live slot is given out;
    │                    a round (and so the photo judge) needs that live slot's token
@@ -112,7 +113,7 @@ Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or
 
 ## Lessons from launch
 
-- **Gemini refuses some locations.** On 2026-09-24 every photo in one round failed with "Editor unavailable (400)", and Gemini's reply was "User location is not supported for the API use." The Round object calls Gemini from wherever Cloudflare placed it, which is near the player by default. Rounds are now pinned to western North America (`locationHint: 'wnam'` in `worker/src/index.js`).
+- **Gemini refuses some locations, Hong Kong among them.** On 2026-09-24 every photo in one round failed with "Editor unavailable (400)", and Gemini's reply was "User location is not supported for the API use." A Round object calls Gemini from wherever Cloudflare created it, which is near where the player's request landed. Players in Singapore were served from Singapore, Hong Kong and even Madrid. Pinning every round to the US fixed it but made each photo 1.5–3 s slower from Singapore, mostly from carrying the photo across the Pacific. So rounds now stay near the player, and only when Gemini refuses the location does that round send its Gemini calls through `GeminiRelay` (`worker/src/relay.js`), one Durable Object created in western North America. Workers Logs show "Gemini refused this round's location…" and "Relayed a Gemini call from the US" when that happens. To test the relay locally, run `wrangler dev --var GEMINI_RELAY_ALWAYS:1`.
 - **Secrets reach every copy of the Worker a few seconds after a deploy.** Right after the first deploy, one `/api/token` request got through without Turnstile. It only happens on a first deploy; later deploys keep the existing secrets.
 - **Browsers pause animations in hidden or covered windows.** Photos used to wait for the shutter flash before being sent, so they stalled in background tabs. `shutter()` in `newsworthy-motion.js` now gives up after 300 ms.
 - **Durable Objects are dropped from memory after about 70–140 s idle.** The stream can take up to 2 minutes to load before the first photo, so rounds must stay saved in storage.
