@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, claimRound, release, releaseIp, nextWake } from './src/gate-core.js';
+import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, claimRound, alive, release, releaseIp, nextWake } from './src/gate-core.js';
 
 const open = (state, ip, now = 0) => { const r = reserve(state, ip, now); if (r.ticket) attach(state, r.ticket, `jwt-${r.ticket}`); return r; };
 const jwtOf = (r) => `jwt-${r.ticket}`;
@@ -160,4 +160,27 @@ test('a live session can open one round, and only while it holds a slot', () => 
   assert.equal(claimRound(s, 'jwt-a'), false);
   release(s, 'jwt-a');
   assert.equal(claimRound(s, 'jwt-a'), false);
+});
+
+test('a game that checks in and then goes quiet loses its slot', () => {
+  const s = emptyState();
+  const r = open(s, 'a');
+  assert.equal(register(s, jwtOf(r), 'sess-1', 0), true);
+  assert.equal(alive(s, jwtOf(r), 10_000), true);
+  assert.equal(nextWake(s), 10_000 + LIMITS.aliveMs);
+  assert.equal(alive(s, jwtOf(r), 20_000), true);
+  assert.deepEqual(sweep(s, 20_000 + LIMITS.aliveMs - 1), []);
+  const [gone] = sweep(s, 20_000 + LIMITS.aliveMs);
+  assert.equal(gone.sessionId, 'sess-1');
+  assert.equal(alive(s, jwtOf(r), 70_000), false);
+});
+
+test('checking in never stretches a session past its 4 minutes', () => {
+  const s = emptyState();
+  const r = open(s, 'a');
+  register(s, jwtOf(r), 'sess-1', 0);
+  const end = LIMITS.sessionMs + LIMITS.graceMs;
+  alive(s, jwtOf(r), end - 1_000);
+  assert.equal(nextWake(s), end);
+  assert.equal(sweep(s, end).length, 1);
 });

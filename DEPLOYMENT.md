@@ -25,7 +25,7 @@ Reactor (live video) and Gemini (photo judge) are the only services outside Clou
 | Piece | File | What it does |
 |---|---|---|
 | Router | `worker/src/index.js` | Serves the game, handles `/api/*`, checks the origin, rate limits (6 new rounds a minute and 240 API calls a minute per address) and Turnstile. `/api/news-round` needs the live-session token from `/api/token` and opens one round per token, so the photo judge sits behind the same Turnstile check. `/` serves `news-design.html`. |
-| Gate | `worker/src/gate.js`, logic in `gate-core.js` | 4 live slots and a first-come-first-served line. Each address can hold 2 places. A waiting ticket expires after 15 s without a check-in. A token that never starts a session loses its slot after 90 s. A session keeps its slot for 240 s + 15 s, then the Gate's alarm ends it with Reactor. There's a cap of 500 sessions a day. "Stop previous session" ends only the caller's own sessions. |
+| Gate | `worker/src/gate.js`, logic in `gate-core.js` | 4 live slots and a first-come-first-served line. Each address can hold 2 places. A waiting ticket expires after 15 s without a check-in. A token that never starts a session loses its slot after 90 s. A session keeps its slot for 240 s + 15 s, then the Gate's alarm ends it with Reactor. While it holds a slot the game checks in every 10 s (`/api/alive`); a slot whose check-ins stop for 40 s is ended, because browsers don't send the goodbye cleanup when a tab is destroyed. There's a cap of 500 sessions a day. "Stop previous session" ends only the caller's own sessions. |
 | Round | `worker/src/round.js` | Runs `createNewsJudge` from `orbis-motion-test/news-judge-api.js` for one round and saves after every photo (`snapshot`/`restore`), because idle Durable Objects are dropped from memory. Stored for 1 hour. |
 | Reactor client | `worker/src/reactor.js` | Mints tokens with `max_sessions: 1` and `max_session_duration_seconds: 240`, and deletes sessions. |
 | Config | `worker/wrangler.jsonc` | Bindings, the custom domain route, the vars `LIVE_SLOTS`, `SLOTS_PER_IP`, `DAILY_SESSION_CAP` and `TURNSTILE_SITE_KEY`. |
@@ -82,7 +82,26 @@ The dashboard can do all of these under Workers & Pages → newsworthy.
 - `npx wrangler tail newsworthy` streams live requests and errors (run from `worker/`).
 - Workers Logs and metrics are in the dashboard, because `observability` is on.
 - `curl -s https://newsworthy.vamonke.com/api/status` shows slots in use.
-- Game events go to the Analytics Engine dataset `newsworthy_events`: index = run id, blobs = event type and command, double = ms.
+- Game events go to the Analytics Engine dataset `newsworthy_events`: index1 = run id, blob1 = event type, blob2 = command, blob3 = error message, double1 = ms.
+- **Failed photo reviews** ("Couldn't review this photo") are recorded as `photo_failed` events, with the message players saw in blob3: `SELECT timestamp, index1, blob3 FROM newsworthy_events WHERE blob1='photo_failed' ORDER BY timestamp DESC`. The cause is in Workers Logs. Each failed Gemini attempt logs `[judge] attempt N failed: …` from the Round Durable Object, with the HTTP status and the start of the body, a timeout, a cancel, or the unreadable or invalid output. Every `/api` error also logs `/api/<path> failed: …` before its 502.
+
+## Bot protection
+
+- **Turnstile** runs in `interaction-only` mode, so most players never see it. The script downloads with the page, and the check runs when the player presses Start. Only `/api/token` (a new live slot) needs it. Players waiting in line check in with their ticket instead.
+- **Rounds and the photo judge** sit behind the same check. `/api/news-round` needs the live-slot token from `/api/token` and opens one round per token, and `/api/news-photo` needs that round's id.
+- **Secret pass** (`TURNSTILE_BYPASS`): skips Turnstile for agent browsers. See the next section.
+
+## Playing in production (agents)
+
+Turnstile blocks automated browsers (error 600010), so an agent can't pass it. Use the secret pass instead:
+
+1. Read `TURNSTILE_BYPASS` from `worker/.dev.vars`. Git ignores that file, and the same value is set on the Worker.
+2. Open `https://newsworthy.vamonke.com/?pass=<value>` in the browser pane. The tab keeps the pass and removes it from the address bar.
+3. Press **Start shooting**. The round skips Turnstile, and the Worker logs "Turnstile skipped with the secret pass". A How to play popup can appear over the live round; its button closes it. Pick a scene in the left panel, then click the video to take a photo.
+4. Every round uses real Reactor and Gemini time and takes one of the 4 live slots from players. Ask Varick before playing, and keep rounds short.
+5. When done, close the tab. With the heartbeat the slot frees itself within about 40 s. The auto-mode permission check blocks calling `/api/stop-sessions` from curl, so don't count on that.
+
+Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or `npx wrangler secret put TURNSTILE_BYPASS` with a new value (update `.dev.vars` too). Slot, line and rate limits still apply with the pass.
 
 ## Testing locally
 

@@ -1,5 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
-import { LIMITS, emptyState, sweep, sweepLine, admit, attach, register, claimRound, release, releaseIp, nextWake } from './gate-core.js';
+import { LIMITS, emptyState, sweep, sweepLine, admit, attach, register, claimRound, alive, release, releaseIp, nextWake } from './gate-core.js';
 import { mintToken, endSession } from './reactor.js';
 
 // One instance for the whole game: it decides who gets one of the live slots.
@@ -28,7 +28,7 @@ export class Gate extends DurableObject {
 
   // Returns { jwt }, or { error } where a 'busy' error carries the player's place in line.
   async open(ip, ticket) {
-    this.end(sweep(this.state, Date.now()));
+    this.end(sweep(this.state, Date.now(), this.limits));
     const held = admit(this.state, ip, ticket, Date.now(), this.limits);
     await this.save();
     if (held.error) return held;
@@ -46,6 +46,12 @@ export class Gate extends DurableObject {
 
   async register(sessionId, jwt) {
     const ok = register(this.state, jwt, sessionId, Date.now(), this.limits);
+    if (ok) await this.save();
+    return ok;
+  }
+
+  async alive(jwt) {
+    const ok = alive(this.state, jwt, Date.now());
     if (ok) await this.save();
     return ok;
   }
@@ -77,7 +83,7 @@ export class Gate extends DurableObject {
   }
 
   async alarm() {
-    this.end(sweep(this.state, Date.now()));
+    this.end(sweep(this.state, Date.now(), this.limits));
     sweepLine(this.state, Date.now(), this.limits);
     await this.save();
   }

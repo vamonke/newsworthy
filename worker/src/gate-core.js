@@ -10,15 +10,20 @@ export const LIMITS = {
   lineMs: 15_000, // a waiting player who stops checking in loses their place
   lineMax: 100,
   pollMs: 3_000, // how often a waiting player checks in
+  aliveMs: 40_000, // a game that has checked in and then goes quiet this long has left (the game checks in every 10 s)
 };
 
 export const emptyState = () => ({ slots: {}, line: [], day: '', opened: 0 });
 
+// When a slot ends: its time is up, or its game checked in and then went quiet (the tab closed or
+// crashed without saying goodbye). Slots that never checked in keep the old timing.
+const endsAt = (slot, limits) => (slot.alive ? Math.min(slot.until, slot.alive + limits.aliveMs) : slot.until);
+
 // Removes slots whose time is up and returns them so the caller can end their Reactor sessions.
-export function sweep(state, now) {
+export function sweep(state, now, limits = LIMITS) {
   const expired = [];
   for (const [ticket, slot] of Object.entries(state.slots)) {
-    if (slot.until <= now) { expired.push(slot); delete state.slots[ticket]; }
+    if (endsAt(slot, limits) <= now) { expired.push(slot); delete state.slots[ticket]; }
   }
   return expired;
 }
@@ -113,6 +118,15 @@ export function claimRound(state, jwt) {
   return true;
 }
 
+// The game checks in every few seconds while it holds a slot. Browsers don't reliably send a
+// cleanup when a tab closes, so a slot whose check-ins stop is ended by sweep().
+export function alive(state, jwt, now) {
+  const hit = byJwt(state, jwt);
+  if (!hit) return false;
+  hit[1].alive = now;
+  return true;
+}
+
 export function release(state, jwt) {
   const hit = byJwt(state, jwt);
   if (!hit) return null;
@@ -130,6 +144,6 @@ export function releaseIp(state, ip) {
 }
 
 export function nextWake(state, limits = LIMITS) {
-  const times = [...Object.values(state.slots).map((s) => s.until), ...(state.line || []).map((w) => w.lastSeen + limits.lineMs)];
+  const times = [...Object.values(state.slots).map((s) => endsAt(s, limits)), ...(state.line || []).map((w) => w.lastSeen + limits.lineMs)];
   return times.length ? Math.min(...times) : null;
 }

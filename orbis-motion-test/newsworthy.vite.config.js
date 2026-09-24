@@ -60,6 +60,8 @@ export default defineConfig(({ mode }) => {
               rounds.add(jwt); return send(res, 200, newsJudge.create());
             }
             if (path === '/news-photo') return send(res, 200, await newsJudge.judge(JSON.parse(await body(req, 1900000))));
+            // Production ends a slot whose game stops checking in; here the session timer is enough.
+            if (path === '/alive') return send(res, 200, { alive: true });
             if (path === '/stop-sessions') { await Promise.all([...sessions].map(([id, s]) => cleanup(id, s.jwt))); return send(res,200,{stopped:true}); }
             if (path === '/token') {
               if (!apiKey) return send(res, 503, { error: 'REACTOR_API_KEY is missing in the workspace .env.local.' });

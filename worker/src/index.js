@@ -67,6 +67,12 @@ async function api(request, env, path, ip) {
     if (!(await gate.register(sessionId, jwt))) return reply(400, { error: 'Unknown live session' });
     return reply(200, { registered: true });
   }
+  if (path === 'alive') {
+    // The game checks in every 10 s while it holds a live slot; see alive() in gate-core.js.
+    const { jwt } = await readJson(request, LIMITS.session);
+    if (typeof jwt !== 'string' || !(await gate.alive(jwt))) return reply(410, { error: 'This live session has ended.' });
+    return reply(200, { alive: true });
+  }
   if (path === 'stop-sessions') { await gate.stopIp(ip); return reply(200, { stopped: true }); }
   if (path === 'news-round') {
     // Only a live session (handed out after the bot check) can open a round, once.
