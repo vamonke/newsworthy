@@ -207,10 +207,11 @@ dialog#photo-detail.np:not(#_) { width: min(1240px,92vw); }
 .np:not(#_) .review-row { display: flex; align-items: center; gap: clamp(10px,1vw,16px); }
 #sale .review-row .review-eye { flex: 0 0 auto; width: clamp(64px,5.6vw,88px); }
 #sale:not(.reviewing) .review-eye, #sale:not(.reviewing) #close-review, #sale.reviewing #sale-paid, #sale.reviewing #dismiss-sale, #sale.reviewing #sale-tag::before { display: none; }
-#sale.reviewing .np-split { align-items: stretch; }
-#sale.reviewing .np-story { display: flex; flex-direction: column; }
+/* Right column fills the photo's height: title at the top, buttons pushed to the bottom */
+#sale.np:not(#_) .np-split { align-items: stretch; }
+#sale.np:not(#_) .np-story { display: flex; flex-direction: column; }
+#sale.np:not(#_) .np-story-actions { margin-top: auto; padding-bottom: 4px; }
 #sale.reviewing .review-row { margin-top: auto; }
-#sale.reviewing .np-story-actions { margin-top: auto; padding-bottom: 4px; }
 .np:not(#_) #close-review { font-size: clamp(16px,1.3vw,20px); padding: 8px 16px 6px; letter-spacing: .8px; }
 .np:not(#_) #close-review::before { border-width: 1.5px; opacity: .7; }
 
