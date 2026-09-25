@@ -89,6 +89,8 @@ The dashboard can do all of these under Workers & Pages → newsworthy.
 
 ## Analytics
 
+Why we track, the numbers so far and ready-made queries are in [ANALYTICS.md](ANALYTICS.md). This section is the technical reference.
+
 The game sends every event to `POST /api/event` with `track(type, {run, label, detail, value})` from `orbis-motion-test/newsworthy-track.js`, which uses `sendBeacon` so clicks on outside links still arrive. The Worker (`worker/src/events.js`) accepts only the types it lists, adds the player id, and writes one row to the Analytics Engine dataset `newsworthy_events`.
 
 Columns never change meaning, so old queries keep working. Add new fields in new columns.

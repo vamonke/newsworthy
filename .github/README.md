@@ -24,7 +24,7 @@ npm run build:newsworthy
 
 ## Production
 
-The game is served by a Cloudflare Worker in `worker/` with live slots, a waiting line and a Turnstile bot check. See [DEPLOYMENT.md](../DEPLOYMENT.md) for the architecture, deploy steps, secrets and limits.
+The game is served by a Cloudflare Worker in `worker/` with live slots, a waiting line and a Turnstile bot check. See [DEPLOYMENT.md](../DEPLOYMENT.md) for the architecture, deploy steps, secrets and limits, and [ANALYTICS.md](../ANALYTICS.md) for player numbers and how to query them.
 
 ## Layout
 

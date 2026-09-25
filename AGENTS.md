@@ -2,6 +2,8 @@
 
 Newsworthy is live at https://newsworthy.vamonke.com on a Cloudflare Worker (`worker/`). Before deploying, or changing anything about the API, live sessions, keys, limits or the domain, read `DEPLOYMENT.md`. Deploy only from a clean worktree of `origin/main`. To play the live game from an agent browser (Turnstile blocks those), see "Playing in production (agents)" in `DEPLOYMENT.md`.
 
+For player numbers, analytics and the Reactor credits pitch they support, read `ANALYTICS.md`.
+
 # Shared-checkout coordination
 
 This repository permits multiple coding agents to work concurrently in the same checkout. Concurrent work is allowed only when the claimed scopes do not overlap.
