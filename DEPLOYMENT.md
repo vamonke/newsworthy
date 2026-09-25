@@ -51,7 +51,7 @@ These are set on the Worker with `wrangler secret`, never committed:
 - `REACTOR_API_KEY`
 - `GEMINI_API_KEY`
 - `TURNSTILE_SECRET`: from the Turnstile widget "Newsworthy", which allows `newsworthy.vamonke.com`, `newsworthy.vamonke.workers.dev` and `localhost`. The site key is public and lives in `wrangler.jsonc`.
-- `PLAYER_SALT`: a random value that keys the hashed IP used to count unique players (see Analytics). Without it no player id is recorded. Keep it the same, or players are counted again.
+- `PLAYER_SALT`: a random value that keys the hashed IP used to count unique players (see Analytics) and to make up leaderboard names. Without it no player id is recorded. Keep it the same, or players are counted again and every name on the leaderboard changes.
 - `TURNSTILE_BYPASS`: a secret pass that skips Turnstile, so agents' test browsers (which Turnstile blocks) can play in production. Open the game once with `?pass=<value>`; the tab keeps it and removes it from the address bar. The value is in `worker/.dev.vars`. Live-slot and rate limits still apply. To revoke it, run `npx wrangler secret delete TURNSTILE_BYPASS`, or `put` a new value.
 
 For local runs, the same keys go in `worker/.dev.vars`, which git ignores. The Reactor and Gemini values are also in the root `.env.local`.
@@ -64,11 +64,12 @@ For local runs, the same keys go in `worker/.dev.vars`, which git ignores. The R
 git fetch && git worktree add --detach /tmp/nw-deploy origin/main
 cd /tmp/nw-deploy && npm ci && (cd worker && npm ci)
 npm run build:newsworthy
-cd worker && npx wrangler deploy
+cd worker && npx wrangler d1 migrations apply newsworthy --remote   # only does anything when worker/migrations/ has a new file
+npx wrangler deploy
 cd / && git -C ~/dev/misc/newsworthy worktree remove --force /tmp/nw-deploy
 ```
 
-After deploying, check that `curl -s https://newsworthy.vamonke.com/api/status` shows `configured: true` and the `turnstile` key. Then check that `curl -s -X POST -d '{}' https://newsworthy.vamonke.com/api/token` is refused with the bot-check message.
+After deploying, check that `curl -s https://newsworthy.vamonke.com/api/status` shows `configured: true` and the `turnstile` key. Then check that `curl -s -X POST -d '{}' https://newsworthy.vamonke.com/api/token` is refused with the bot-check message, and that `curl -s https://newsworthy.vamonke.com/api/leaderboard` returns the board.
 
 ## Take it down or roll back
 
@@ -78,8 +79,8 @@ Run these from `worker/`:
 |---|---|---|
 | Stop Reactor spending, keep the site up | `npx wrangler secret delete REACTOR_API_KEY` | New rounds fail with an error. Put the key back with `npx wrangler secret put REACTOR_API_KEY`. |
 | Fewer players at once | change `LIVE_SLOTS` in `wrangler.jsonc`, then deploy | Changes the slot count. `0` isn't supported; use the line above instead. |
-| Bad deploy | `npx wrangler rollback` | Switches back to the previous version. |
-| Take the site offline | `npx wrangler delete` | Removes the Worker, its domain and its secrets. Redeploying needs all three secrets again. |
+| Bad deploy | `npx wrangler rollback` | Switches back to the previous version. The D1 scores and R2 photos aren't touched. |
+| Take the site offline | `npx wrangler delete` | Removes the Worker, its domain and its secrets. Redeploying needs every secret in the Secrets list again. The D1 database and R2 bucket are separate and stay. |
 
 The dashboard can do all of these under Workers & Pages → newsworthy.
 
@@ -163,6 +164,7 @@ Turnstile blocks automated browsers (error 600010), so an agent can't pass it. U
 2. Open `https://newsworthy.vamonke.com/?pass=<value>` in the browser pane. The tab keeps the pass and removes it from the address bar.
 3. Press **Start shooting**. The round skips Turnstile, and the Worker logs "Turnstile skipped with the secret pass". A How to play popup can appear over the live round; its button closes it. Pick a scene in the left panel, then click the video to take a photo.
 4. Every round uses real Reactor and Gemini time and takes one of the 4 live slots from players. Ask Varick before playing, and keep rounds short.
+   Rounds played this way are posted to the leaderboard like anyone else's, under Varick's network player id (`bdf0edb99a002e95`, shown as "Lively Yak 14"). Varick chose to keep them there.
 5. When done, close the tab. With the heartbeat the slot frees itself within about 40 s. The auto-mode permission check blocks calling `/api/stop-sessions` from curl, so don't count on that.
 
 Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or `npx wrangler secret put TURNSTILE_BYPASS` with a new value (update `.dev.vars` too). Slot, line and rate limits still apply with the pass.
@@ -170,7 +172,7 @@ Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or
 ## Testing locally
 
 - **Run the Worker locally.** Run `npm run build:newsworthy` at the repo root, then `npx wrangler dev --port 8787 --ip 127.0.0.1` in `worker/`. Or use the `newsworthy-worker` entry in `.claude/launch.json`.
-- **Unit tests.** Run `cd worker && npm test` for the Gate and line, and `npm run test:newsworthy` for the judge, including save/restore.
+- **Unit tests.** Run `cd worker && npm test` for the Gate and line, analytics events and the leaderboard (its queries run against the real schema in Node's built-in SQLite), and `npm run test:newsworthy` for the judge, including save/restore.
 - **Turnstile blocks automated browsers** (error 600010), so it can't be passed from a test browser. To test the flow, use Cloudflare's always-pass pair: site key `1x00000000000000000000AA` (via `--var TURNSTILE_SITE_KEY:...`) and secret `1x0000000000000000000000000000000AA` in `.dev.vars`. Put the real secret back afterwards. Requests that carry a waiting-line `ticket` skip Turnstile.
 - **Test the Gate for free.** Minting Reactor tokens with curl costs nothing, and you can pretend to be different players with the `CF-Connecting-IP` header. Only a real browser round uses Reactor time.
 
@@ -189,6 +191,8 @@ Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or
 - **The board** (`GET /api/leaderboard`) shows each player's best round, top 10, all time. `?round=<id>` marks the viewer's row. Photos are served by `GET /api/photo/<round>/shot-N.jpg`, only for photos a posted round sold.
 - **The game** opens it from the header and from See leaderboard on the results popup (`orbis-motion-test/newsworthy-leaderboard.js`). The local Vite server returns an empty board; run the Worker locally for real data.
 - **Schema changes** go in a new file in `worker/migrations/`, applied with `npx wrangler d1 migrations apply newsworthy --remote` (and `--local` for local runs) before deploying code that needs them.
+- **Test rounds stay on the board.** Varick's and agents' rounds come from player `bdf0edb99a002e95` and are kept on purpose (2026-09-26).
+- **Photo content isn't reviewed.** Photos are frames of the generated video and players aren't told they're kept; the 9 rescued on 2026-09-25 were checked by eye and were fine. Remove a round if something bad reaches the board.
 - **To remove a round from the board:** `npx wrangler d1 execute newsworthy --remote --command "DELETE FROM scores WHERE round = '<round id>'"`.
 
 ## Not built yet

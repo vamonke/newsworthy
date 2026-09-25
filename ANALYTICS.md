@@ -28,6 +28,8 @@ All game events go to the Analytics Engine dataset `newsworthy_events` on the Cl
 | 2026-09-25 ~14:23 | UTM tags on the Reactor links, `slot_opened`, `line_joined`, `turned_away`, Reactor seconds per round on `closed`, loading seconds on `first_video_frame`. |
 | 2026-09-25 ~14:43 | `closed` also recorded when a player leaves mid-round (label `left`; normal ends are `ended`). |
 
+Since 2026-09-26 every scored round is also a row in the D1 table `scores` (database `newsworthy`: round, player id, total, sold photos), and since 2026-09-25 every judged photo is kept in the R2 bucket `newsworthy-photos`. Both are described in DEPLOYMENT.md, "Leaderboard and saved photos". For totals per round, query D1 instead of adding up `photo_result` rows: D1 isn't sampled. For example, `npx wrangler d1 execute newsworthy --remote --command "SELECT COUNT(*), MAX(total) FROM scores WHERE player != 'bdf0edb99a002e95'"`.
+
 Cloudflare's own traffic data for `newsworthy.vamonke.com` (page loads, countries, devices) covers the whole time since launch. Referring sites aren't available there on the free plan, which is why `page_opened` records them.
 
 ## Baseline (launch to 2026-09-25 13:55 UTC)
@@ -89,8 +91,9 @@ In Reactor's own analytics, our visits show up as `utm_source=newsworthy`, `utm_
 - **Shares and saves:** record when a player saves or downloads the front-page keepsake, to show reach beyond players.
 - **Custom scenes:** count scenes players typed themselves (maybe keep the text), to show people steering the model creatively.
 - **One-page stats summary** for the pitch, pulled from the live data.
-- **Qualitative proof:** screenshots of posts on X and the best photo and headline pairs.
+- **Qualitative proof:** screenshots of posts on X and the best photo and headline pairs. The best pairs can now come from the saved photos in R2.
 
 ## Log
 
+- **2026-09-26:** added the leaderboard. Every scored round is now a row in D1 `scores`, and every judged photo is kept in R2 (since 2026-09-25). First posted rounds: $5,502 (a player) and $6,188 (a test round, kept on the board).
 - **2026-09-25:** checked the first numbers (above). Added player ids, `/api/event`, link tracking, slot demand, Reactor time and UTM tags; deployed three times. Each deploy was play-tested in production: rounds started, got live video, took a photo that sold for $1,000, and closed; events arrived with the new columns. Found and fixed `closed` missing when a player leaves mid-round.
