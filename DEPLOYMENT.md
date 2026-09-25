@@ -30,7 +30,7 @@ Reactor (live video) and Gemini (photo judge) are the only services outside Clou
 | Round | `worker/src/round.js` | Runs `createNewsJudge` from `orbis-motion-test/news-judge-api.js` for one round and saves after every photo (`snapshot`/`restore`), because idle Durable Objects are dropped from memory. Stored for 1 hour. |
 | Reactor client | `worker/src/reactor.js` | Mints tokens with `max_sessions: 1` and `max_session_duration_seconds: 240`, and deletes sessions. |
 | Config | `worker/wrangler.jsonc` | Bindings, the custom domain route, the vars `LIVE_SLOTS`, `SLOTS_PER_IP`, `DAILY_SESSION_CAP` and `TURNSTILE_SITE_KEY`. |
-| Deploy filter | `orbis-motion-test/public/.assetsignore` | Keeps unused public files (brand concepts, old opening images, `preview.webm`) out of the upload. |
+| Deploy filter | `orbis-motion-test/public/.assetsignore` | Keeps unused local-only public files (brand concepts, old opening images, `preview.webm`) out of the upload. |
 
 The local Vite dev server (`orbis-motion-test/newsworthy.vite.config.js`) still has its own in-memory copy of the API for local play. It allows one session at a time and has no line or Turnstile, but `/news-round` also needs a token from `/token`. Changes to the API usually need making in both places.
 
