@@ -3,6 +3,7 @@ import { Round } from './round.js';
 import { GeminiRelay } from './relay.js';
 import { MODEL } from './reactor.js';
 import { toDataPoint, playerId, SERVER_EVENT_TYPES } from './events.js';
+import { TOP, RANK, ROUND, toBoard, listsPhoto } from './leaderboard.js';
 
 // Records an analytics event from the Worker itself, e.g. demand for live slots.
 async function record(env, ip, event) {
@@ -13,6 +14,7 @@ async function record(env, ip, event) {
 export { Gate, Round, GeminiRelay };
 
 const reply = (status, body, headers = {}) => Response.json(body, { status, headers });
+const ROUND_ID = /^[0-9a-f]{64}$/;
 const LIMITS = { token: 4096, session: 20_000, photo: 1_900_000, event: 2048 };
 
 async function readJson(request, limit) {
@@ -44,6 +46,24 @@ async function api(request, env, path, ip) {
   if (path === 'status' && request.method === 'GET') {
     const { active, slots } = await gate.status();
     return reply(200, { configured: Boolean(env.REACTOR_API_KEY), model: MODEL, activeSessions: active, slots, turnstile: env.TURNSTILE_SECRET ? env.TURNSTILE_SITE_KEY : null });
+  }
+  if (path === 'leaderboard' && request.method === 'GET') {
+    if (env.API_LIMITER && !(await env.API_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many requests. Slow down a little.' });
+    // Top 10, each player's best round. With ?round=, the viewer's row is marked and their place returned.
+    const round = new URL(request.url).searchParams.get('round');
+    const mine = ROUND_ID.test(round || '') ? await env.SCORES.prepare(ROUND).bind(round).first() : null;
+    const { results } = await env.SCORES.prepare(TOP).all();
+    const rank = mine ? (await env.SCORES.prepare(RANK).bind(mine.player, mine.total).first()).rank : null;
+    return reply(200, toBoard(results, mine, rank), { 'Cache-Control': 'no-store' });
+  }
+  const photoPath = request.method === 'GET' && path.match(/^photo\/([0-9a-f]{64})\/(shot-[0-9]{1,2})\.jpg$/);
+  if (photoPath) {
+    // Only photos that a leaderboard round sold.
+    const [, round, id] = photoPath;
+    if (!listsPhoto(await env.SCORES.prepare(ROUND).bind(round).first(), id)) return reply(404, { error: 'Not found' });
+    const object = await env.PHOTOS.get(`rounds/${round}/${id}.jpg`);
+    if (!object) return reply(404, { error: 'Not found' });
+    return new Response(object.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable' } });
   }
   if (request.method !== 'POST') return reply(405, { error: 'Method not allowed' });
   const origin = request.headers.get('Origin');
@@ -92,7 +112,7 @@ async function api(request, env, path, ip) {
     const { jwt } = await readJson(request, LIMITS.session);
     if (typeof jwt !== 'string' || !(await gate.claimRound(jwt))) return reply(403, { error: 'Start a live session before a round.' });
     const id = env.ROUND.newUniqueId();
-    return reply(200, await env.ROUND.get(id).start(id.toString()));
+    return reply(200, await env.ROUND.get(id).start(id.toString(), await playerId(env.PLAYER_SALT, ip)));
   }
   if (path === 'news-photo') {
     const photo = await readJson(request, LIMITS.photo);
@@ -106,8 +126,6 @@ async function api(request, env, path, ip) {
     env.EVENTS?.writeDataPoint(point);
     return reply(200, { saved: true });
   }
-  // Leaderboard (planned, not built): POST /api/score {roundId, name} reads the total from the
-  // Round object, never from the browser, and stores it in D1; GET /api/leaderboard serves the table.
   return reply(404, { error: 'Not found' });
 }
 

@@ -9,6 +9,7 @@ import {cropRect} from './newsworthy-crop.js';
 import {eventIcon} from './newsworthy-icons.js';
 import {context,setSound,shutterSound,moneySound,startLoadingSound,stopLoadingSound} from './newsworthy-sounds.js';
 import {playLoading} from './newsworthy-loading.js';
+import {openLeaderboard} from './newsworthy-leaderboard.js';
 const $=s=>document.querySelector(s),video=$('#feed'),empty=$('#photos').innerHTML;
 const LIVE_VOLUME=.5,DIALOG_VOLUME=.08,VOLUME_FADE_MS=400;
 let volumeFade;
@@ -76,4 +77,6 @@ tickerPause.onclick = () => {
 };
 
 $('#how-it-works').onclick=()=>$('#about').showModal();
-$('#high-scores').onclick=()=>$('#scores-dialog').showModal();
+$('#high-scores').onclick=()=>void openLeaderboard();
+// Opens over the results popup; the round is already on the board (the Worker posts every scored round).
+$('#see-board').onclick=()=>void openLeaderboard({round:roundId,onPlay:()=>$('#again').click()});

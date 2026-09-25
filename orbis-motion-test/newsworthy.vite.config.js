@@ -26,9 +26,6 @@ export default defineConfig(({ mode }) => {
   // Each round opens its own Reactor session, so 4 minutes covers loading plus the 2-minute round.
   // Reactor ends the session itself at this limit; our cleanup timer is the backstop.
   const SESSION_SECONDS = 240;
-  // Leaderboard (planned, not built): the popup in news-design.html is a placeholder. In production,
-  // POST /api/score {roundId, name} should read the total from the judge's round state, never from the
-  // browser, then store it in D1; GET /api/leaderboard serves the table.
   async function cleanup(id, jwt) {
     const response = await fetch(`https://api.reactor.inc/sessions/${encodeURIComponent(id)}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${jwt}` }, signal: AbortSignal.timeout(15000),
@@ -50,6 +47,9 @@ export default defineConfig(({ mode }) => {
           try {
             const path = req.url.split('?')[0];
             if (path === '/status') return send(res, 200, { configured: Boolean(apiKey), model: MODEL, activeSessions: sessions.size });
+            // The leaderboard lives in D1 on the Worker (worker/src/leaderboard.js); locally it is empty.
+            // To try it with data, run the Worker locally (`npm run dev` in worker/).
+            if (path === '/leaderboard') return send(res, 200, { top: [], you: null });
             if (req.method !== 'POST') return next();
             // Local dev API: reject cross-origin writes.
             if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return send(res, 403, { error: 'Invalid origin' });

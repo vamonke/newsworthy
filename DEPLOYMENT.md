@@ -15,6 +15,9 @@ Browser ──HTTPS──▶ Worker "newsworthy" (worker/src/index.js)
    │                 ├─ /api/token, /session, /cleanup, /stop-sessions ─▶ Gate Durable Object (one for the whole game)
    │                 ├─ /api/news-round, /news-photo ─▶ Round Durable Object (one per round) ─▶ Gemini API
    │                 │                                   (via GeminiRelay in the US if Gemini refuses the round's location)
+   │                 │                                   ├─▶ R2 bucket "newsworthy-photos" (every judged photo)
+   │                 │                                   └─▶ D1 database "newsworthy" (the round's score)
+   │                 ├─ /api/leaderboard, /api/photo/… ─▶ D1 + R2
    │                 ├─ /api/event ─▶ Analytics Engine dataset "newsworthy_events"
    │                 └─ Turnstile check + rate limits before a live slot is given out;
    │                    a round (and so the photo judge) needs that live slot's token
@@ -27,7 +30,8 @@ Reactor (live video) and Gemini (photo judge) are the only services outside Clou
 |---|---|---|
 | Router | `worker/src/index.js` | Serves the game, handles `/api/*`, checks the origin, rate limits (6 new rounds a minute and 240 API calls a minute per address) and Turnstile. `/api/news-round` needs the live-session token from `/api/token` and opens one round per token, so the photo judge sits behind the same Turnstile check. `/` serves `news-design.html`. |
 | Gate | `worker/src/gate.js`, logic in `gate-core.js` | 4 live slots and a first-come-first-served line. Each address can hold 2 places. A waiting ticket expires after 15 s without a check-in. A token that never starts a session loses its slot after 90 s. A session keeps its slot for 240 s + 15 s, then the Gate's alarm ends it with Reactor. While it holds a slot the game checks in every 10 s (`/api/alive`); a slot whose check-ins stop for 40 s is ended, because browsers don't send the goodbye cleanup when a tab is destroyed. There's a cap of 500 sessions a day. "Stop previous session" ends only the caller's own sessions. |
-| Round | `worker/src/round.js` | Runs `createNewsJudge` from `orbis-motion-test/news-judge-api.js` for one round and saves after every photo (`snapshot`/`restore`), because idle Durable Objects are dropped from memory. Stored for 1 hour. |
+| Round | `worker/src/round.js` | Runs `createNewsJudge` from `orbis-motion-test/news-judge-api.js` for one round and saves after every photo (`snapshot`/`restore`), because idle Durable Objects are dropped from memory. After each photo it writes the photo to R2 and the round's score to D1. An hour after the round starts it copies itself to R2; nothing is deleted. |
+| Leaderboard | `worker/src/leaderboard.js`, schema in `worker/migrations/` | See "Leaderboard and saved photos". |
 | Reactor client | `worker/src/reactor.js` | Mints tokens with `max_sessions: 1` and `max_session_duration_seconds: 240`, and deletes sessions. |
 | Config | `worker/wrangler.jsonc` | Bindings, the custom domain route, the vars `LIVE_SLOTS`, `SLOTS_PER_IP`, `DAILY_SESSION_CAP` and `TURNSTILE_SITE_KEY`. |
 | Deploy filter | `orbis-motion-test/public/.assetsignore` | Keeps unused local-only public files (brand concepts, old opening images, `preview.webm`) out of the upload. |
@@ -177,9 +181,18 @@ Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or
 - **Browsers pause animations in hidden or covered windows.** Photos used to wait for the shutter flash before being sent, so they stalled in background tabs. `shutter()` in `newsworthy-motion.js` now gives up after 300 ms.
 - **Durable Objects are dropped from memory after about 70–140 s idle.** The stream can take up to 2 minutes to load before the first photo, so rounds must stay saved in storage.
 
+## Leaderboard and saved photos
+
+- **Every judged photo is kept** in the R2 bucket `newsworthy-photos`: `rounds/<round id>/shot-N.jpg` (the 640px copy the judge saw) and `shot-N.json` (its result). An hour after a round starts, `round.json` and thumbnails of its accepted photos are added. Rounds from before 2026-09-25 were deleted after an hour and are gone.
+- **Every round with a score is posted**, by the Round object after each photo, to the `scores` table in the D1 database `newsworthy`. The total comes from the Round object, never the browser. Players don't enter anything.
+- **Names are made up from the player id** (`nameFor` in `leaderboard.js`): two words and a number, about 370,000 names. The player id is the hashed IP, so a player on another network gets another name, and people sharing one network share one. Rounds with no player id use the round id.
+- **The board** (`GET /api/leaderboard`) shows each player's best round, top 10, all time. `?round=<id>` marks the viewer's row. Photos are served by `GET /api/photo/<round>/shot-N.jpg`, only for photos a posted round sold.
+- **The game** opens it from the header and from See leaderboard on the results popup (`orbis-motion-test/newsworthy-leaderboard.js`). The local Vite server returns an empty board; run the Worker locally for real data.
+- **Schema changes** go in a new file in `worker/migrations/`, applied with `npx wrangler d1 migrations apply newsworthy --remote` (and `--local` for local runs) before deploying code that needs them.
+- **To remove a round from the board:** `npx wrangler d1 execute newsworthy --remote --command "DELETE FROM scores WHERE round = '<round id>'"`.
+
 ## Not built yet
 
-- **Leaderboard.** `POST /api/score {roundId, name}` should read the total from the Round object, never from the browser, and store it in D1. `GET /api/leaderboard` then serves the table. The popup in `news-design.html` is a placeholder, and there are notes in `worker/src/index.js` and `newsworthy.vite.config.js`.
 - **Estimated wait in the line.**
 - **Retrying a failed line check-in.** Right now one network error ends the wait.
 - **AI Gateway in front of Gemini**, for logs and a spend cap.

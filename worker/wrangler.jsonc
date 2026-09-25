@@ -31,6 +31,8 @@
   ],
   // Every judged photo and its result, kept for picking photos to show (src/round.js).
   "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "newsworthy-photos" }],
+  // Leaderboard scores (src/leaderboard.js). Schema: migrations/, applied with `wrangler d1 migrations apply newsworthy --remote`.
+  "d1_databases": [{ "binding": "SCORES", "database_name": "newsworthy", "database_id": "27d9cdc4-746a-4235-97e6-28b5d86a0138" }],
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "newsworthy_events" }],
   // Secrets (wrangler secret put): REACTOR_API_KEY, GEMINI_API_KEY, TURNSTILE_SECRET.
   // The Turnstile widget "Newsworthy" allows newsworthy.vamonke.com, newsworthy.vamonke.workers.dev and localhost.
