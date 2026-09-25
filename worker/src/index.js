@@ -106,6 +106,14 @@ async function api(request, env, path, ip) {
     env.EVENTS?.writeDataPoint(point);
     return reply(200, { saved: true });
   }
+  if (path === 'admin/archive') {
+    // Temporary: copies the listed rounds to R2 now. Needs the secret pass.
+    const { pass, ids } = await readJson(request, LIMITS.session);
+    if (!(await samePass(pass, env.TURNSTILE_BYPASS))) return reply(403, { error: 'Forbidden' });
+    const rounds = (Array.isArray(ids) ? ids : []).filter((id) => /^[0-9a-f]{64}$/.test(id)).slice(0, 200);
+    const results = await Promise.all(rounds.map((id) => env.ROUND.get(env.ROUND.idFromString(id)).archive().catch((e) => ({ error: e.message }))));
+    return reply(200, Object.fromEntries(rounds.map((id, i) => [id, results[i]])));
+  }
   // Leaderboard (planned, not built): POST /api/score {roundId, name} reads the total from the
   // Round object, never from the browser, and stores it in D1; GET /api/leaderboard serves the table.
   return reply(404, { error: 'Not found' });

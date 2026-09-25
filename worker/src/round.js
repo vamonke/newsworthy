@@ -5,6 +5,9 @@ import { relayStub } from './relay.js';
 
 const KEEP_MS = 60 * 60 * 1000;
 
+// Pulls the bytes out of a JPEG data URL, for R2.
+const jpeg = (dataUrl) => Uint8Array.from(atob(dataUrl.slice(dataUrl.indexOf(',') + 1)), (c) => c.charCodeAt(0));
+
 // One instance per round. It is saved after every photo, because an idle object is evicted
 // from memory (the stream can take up to 2 minutes to load before the first photo).
 export class Round extends DurableObject {
@@ -47,10 +50,28 @@ export class Round extends DurableObject {
     if (!this.id || photo?.roundId !== this.id) throw new Error('Round expired. Start a new round.');
     const result = await this.judge.judge(photo);
     await this.save();
+    // Every judged photo is kept in R2 with its result. A failed write never costs the player the photo.
+    const key = `rounds/${this.id}/${photo.photoId}`;
+    this.ctx.waitUntil(Promise.all([
+      this.env.PHOTOS?.put(`${key}.jpg`, jpeg(photo.image), { httpMetadata: { contentType: 'image/jpeg' } }),
+      this.env.PHOTOS?.put(`${key}.json`, JSON.stringify({ roundId: this.id, photoId: photo.photoId, custom: Boolean(photo.custom), at: Date.now(), result })),
+    ]).catch((error) => console.error('[photos] save failed:', error?.message)));
     return result;
   }
 
+  // Copies the round as saved here (results, and thumbnails of the accepted photos) to R2.
+  // Covers rounds from before photos were saved one by one.
+  async archive() {
+    const snapshot = this.id && this.judge.snapshot(this.id);
+    if (!snapshot || !this.env.PHOTOS) return { saved: 0 };
+    const { accepted, ...round } = snapshot;
+    await this.env.PHOTOS.put(`rounds/${this.id}/round.json`, JSON.stringify({ roundId: this.id, ...round, accepted: accepted.map(({ image, ...rest }) => rest) }));
+    await Promise.all(accepted.map((p, i) => this.env.PHOTOS.put(`rounds/${this.id}/accepted-${i}.jpg`, jpeg(p.image), { httpMetadata: { contentType: 'image/jpeg' } })));
+    return { saved: accepted.length };
+  }
+
+  // Rounds are no longer deleted: the round is copied to R2 an hour after it starts and kept.
   async alarm() {
-    await this.ctx.storage.deleteAll();
+    await this.archive();
   }
 }
