@@ -164,7 +164,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 #event-timer.ready::before { display: none; }
 #event-timer-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #event-timer-left { flex: none; }
-.event-desk.events-locked .incidents, .event-desk.events-locked #custom { opacity: .45; }
+.event-desk.events-locked .incidents, .event-desk.events-locked #custom button { opacity: .45; }
 .event-desk #custom {
   min-width: 0;
   margin: 0;
