@@ -15,7 +15,7 @@ Browser ──HTTPS──▶ Worker "newsworthy" (worker/src/index.js)
    │                 ├─ /api/token, /session, /cleanup, /stop-sessions ─▶ Gate Durable Object (one for the whole game)
    │                 ├─ /api/news-round, /news-photo ─▶ Round Durable Object (one per round) ─▶ Gemini API
    │                 │                                   (via GeminiRelay in the US if Gemini refuses the round's location)
-   │                 ├─ /api/save ─▶ Analytics Engine dataset "newsworthy_events"
+   │                 ├─ /api/event ─▶ Analytics Engine dataset "newsworthy_events"
    │                 └─ Turnstile check + rate limits before a live slot is given out;
    │                    a round (and so the photo judge) needs that live slot's token
    └──WebRTC video, straight to Reactor (never through Cloudflare)
@@ -47,6 +47,7 @@ These are set on the Worker with `wrangler secret`, never committed:
 - `REACTOR_API_KEY`
 - `GEMINI_API_KEY`
 - `TURNSTILE_SECRET`: from the Turnstile widget "Newsworthy", which allows `newsworthy.vamonke.com`, `newsworthy.vamonke.workers.dev` and `localhost`. The site key is public and lives in `wrangler.jsonc`.
+- `PLAYER_SALT`: a random value that keys the hashed IP used to count unique players (see Analytics). Without it no player id is recorded. Keep it the same, or players are counted again.
 - `TURNSTILE_BYPASS`: a secret pass that skips Turnstile, so agents' test browsers (which Turnstile blocks) can play in production. Open the game once with `?pass=<value>`; the tab keeps it and removes it from the address bar. The value is in `worker/.dev.vars`. Live-slot and rate limits still apply. To revoke it, run `npx wrangler secret delete TURNSTILE_BYPASS`, or `put` a new value.
 
 For local runs, the same keys go in `worker/.dev.vars`, which git ignores. The Reactor and Gemini values are also in the root `.env.local`.
@@ -83,9 +84,57 @@ The dashboard can do all of these under Workers & Pages → newsworthy.
 - `npx wrangler tail newsworthy` streams live requests and errors (run from `worker/`).
 - Workers Logs and metrics are in the dashboard, because `observability` is on.
 - `curl -s https://newsworthy.vamonke.com/api/status` shows slots in use.
-- Game events go to the Analytics Engine dataset `newsworthy_events`: index1 = run id, blob1 = event type, blob2 = command, blob3 = error message, double1 = ms.
-- **Analytics Engine samples these rows**, so a round's events can be missing and plain counts undercount. Each row's `_sample_interval` says how many events it stands for: use `sum(_sample_interval)` for totals, and don't expect a complete timeline for one round. For an exact record of one round, use Workers Logs or `wrangler tail`.
+- Game and page events go to Analytics Engine. See Analytics below.
 - **Failed photo reviews** ("Couldn't review this photo") are recorded as `photo_failed` events, with the message players saw in blob3: `SELECT timestamp, index1, blob3 FROM newsworthy_events WHERE blob1='photo_failed' ORDER BY timestamp DESC`. The cause is in Workers Logs. Each failed Gemini attempt logs `[judge] attempt N failed: …` from the Round Durable Object, with the HTTP status and the start of the body, a timeout, a cancel, or the unreadable or invalid output. Every `/api` error also logs `/api/<path> failed: …` before its 502.
+
+## Analytics
+
+The game sends every event to `POST /api/event` with `track(type, {run, label, detail, value})` from `orbis-motion-test/newsworthy-track.js`, which uses `sendBeacon` so clicks on outside links still arrive. The Worker (`worker/src/events.js`) accepts only the types it lists, adds the player id, and writes one row to the Analytics Engine dataset `newsworthy_events`.
+
+Columns never change meaning, so old queries keep working. Add new fields in new columns.
+
+| Column | Meaning |
+|---|---|
+| index1 | run id during a round, otherwise the page session |
+| blob1 | event type |
+| blob2 | label (see the event table) |
+| blob3 | detail: an error or reason |
+| blob4 | player id (hashed IP) |
+| blob5 | page session: one per browser tab, kept across reloads |
+| blob6 | run id: one per round, empty outside a round |
+| double1 | value (see the event table) |
+
+| Event | When | label | detail | value |
+|---|---|---|---|---|
+| `page_opened` | the game page loads | referring site's hostname, empty if none | | |
+| `link_clicked` | a link with `data-track` is clicked | the link's `data-track` name | | |
+| `command_sent` | a command is sent to the live video | command | | ms spent queued |
+| `command_ack` | the live video confirms a command | command | | ms to confirm |
+| `model_error` | the live video rejects a command | | reason | |
+| `incident_clicked` | the player picks a scene | scene name | | |
+| `first_video_frame` | live video starts | | | |
+| `photo_captured` | a photo is taken | photo id | | |
+| `photo_result` | a photo is reviewed | photo id | | dollars earned |
+| `photo_failed` | a photo couldn't be reviewed | photo id | message the player saw | |
+| `closed` | the round's live session closes | | | |
+
+The link names are `header_profile`, `header_github`, `ticker_hire_me`, `ticker_reactor`, `ticker_nicky_case` and `how_it_works_visko_orbis`.
+
+**To track something new**, add its type to `EVENT_TYPES` in `worker/src/events.js`, call `track()` (or `city.record()` inside a round, which adds the run id), and add a row to the table above. For a new link, add `data-track="<name>"` to the `<a>`; nothing else is needed. The Worker refuses unknown types, so a new type only records after the Worker is deployed.
+
+- **Unique players:** blob4 is the first 16 hex characters of an HMAC-SHA256 of the player's IP, keyed with `PLAYER_SALT`, so it's the same for one IP across rounds and days but the IP can't be recovered from it. People sharing a network count as one player, and one person on two networks counts as two. Changing `PLAYER_SALT` gives everyone new ids.
+- **Rows from before 2026-09-25** came from the old `/api/save`: index1 was the run id, blob2 the command, blob3 the error and double1 the ms, as now, but blob4 to blob6 are empty and there is no `page_opened` or `link_clicked`.
+- **Analytics Engine samples rows**, so plain counts undercount. Each row's `_sample_interval` says how many events it stands for: use `sum(_sample_interval)` for totals, and don't expect a complete timeline for one round. For an exact record of one round, use Workers Logs or `wrangler tail`.
+- **Querying:** the SQL API works with wrangler's login token (run `npx wrangler whoami` first if it has expired):
+
+```bash
+TOKEN=$(grep oauth_token ~/Library/Preferences/.wrangler/config/default.toml | cut -d'"' -f2)
+curl -s https://api.cloudflare.com/client/v4/accounts/6fd560e6892546be11ef30883a03dd71/analytics_engine/sql \
+  -H "Authorization: Bearer $TOKEN" \
+  -d "SELECT blob2 AS link, sum(_sample_interval) AS clicks, count(DISTINCT blob4) AS players FROM newsworthy_events WHERE blob1='link_clicked' GROUP BY link ORDER BY clicks DESC FORMAT JSONEachRow"
+```
+
+Unique players: `SELECT count(DISTINCT blob4) FROM newsworthy_events WHERE blob4 != ''`. Visitors who never started a round: sessions with `page_opened` but no `first_video_frame`.
 
 ## Bot protection
 

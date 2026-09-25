@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import { createReadStream } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createNewsJudge } from './news-judge-api.js';
@@ -86,6 +86,13 @@ export default defineConfig(({ mode }) => {
                 sessions.set(sessionId, { jwt, timer });
               }
               return send(res, 200, { registered: true });
+            }
+            // Production writes analytics events to Analytics Engine; here they're appended to runs/events.jsonl.
+            if (path === '/event') {
+              const event = JSON.parse(await body(req, 2048) || '{}');
+              await mkdir(resolve(root, 'runs'), { recursive: true });
+              await appendFile(resolve(root, 'runs', 'events.jsonl'), JSON.stringify({ t: new Date().toISOString(), ...event }) + '\n');
+              return send(res, 200, { saved: true });
             }
             if (path === '/save' || path.startsWith('/recording/')) {
               let id, data, ext;

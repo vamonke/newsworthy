@@ -2,11 +2,12 @@ import { Gate } from './gate.js';
 import { Round } from './round.js';
 import { GeminiRelay } from './relay.js';
 import { MODEL } from './reactor.js';
+import { toDataPoint, playerId } from './events.js';
 
 export { Gate, Round, GeminiRelay };
 
 const reply = (status, body, headers = {}) => Response.json(body, { status, headers });
-const LIMITS = { token: 1024, session: 20_000, photo: 1_900_000, save: 2 * 1024 * 1024 };
+const LIMITS = { token: 1024, session: 20_000, photo: 1_900_000, event: 2048 };
 
 async function readJson(request, limit) {
   const text = await request.text();
@@ -87,14 +88,11 @@ async function api(request, env, path, ip) {
     if (typeof photo.roundId !== 'string' || !/^[0-9a-f]{64}$/.test(photo.roundId)) return reply(400, { error: 'Round expired. Start a new round.' });
     return reply(200, await env.ROUND.get(env.ROUND.idFromString(photo.roundId)).judgePhoto(photo));
   }
-  if (path === 'save') {
-    // The game posts its whole event log each time; only the newest event is recorded.
-    // blob1 = event type, blob2 = command, blob3 = error message (photo_failed).
-    const log = await readJson(request, LIMITS.save);
-    const event = log.events?.at?.(-1);
-    if (env.EVENTS && typeof log.id === 'string' && event?.type) {
-      env.EVENTS.writeDataPoint({ indexes: [log.id.slice(0, 96)], blobs: [String(event.type).slice(0, 64), String(event.command || '').slice(0, 64), String(event.error || '').slice(0, 200)], doubles: [Number(event.queueMs ?? event.ackMs ?? 0)] });
-    }
+  if (path === 'event') {
+    // One analytics event per request; see events.js for the columns.
+    const point = toDataPoint(await readJson(request, LIMITS.event), await playerId(env.PLAYER_SALT, ip));
+    if (!point) return reply(400, { error: 'Unknown event' });
+    env.EVENTS?.writeDataPoint(point);
     return reply(200, { saved: true });
   }
   // Leaderboard (planned, not built): POST /api/score {roundId, name} reads the total from the
