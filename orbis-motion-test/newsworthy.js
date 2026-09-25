@@ -77,6 +77,11 @@ tickerPause.onclick = () => {
 };
 
 $('#how-it-works').onclick=()=>$('#about').showModal();
+// How it works and the leaderboard are modal, so the masthead stays visible above the shade but can't be
+// clicked. A click on one of its buttons or links closes the open popup and then does that button's job,
+// so the two popups switch between each other instead of doing nothing.
+const HEADER_POPUPS=['#about','#scores-dialog','#lb-player'].map(s=>$(s));
+document.addEventListener('click',e=>{const open=HEADER_POPUPS.filter(d=>d.open);if(!open.length||e.target.closest('dialog'))return;const hit=[...document.querySelectorAll('.masthead button,.masthead a')].find(el=>{const r=el.getBoundingClientRect();return r.width&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;});if(!hit)return;open.forEach(d=>d.close());hit.click();});
 $('#high-scores').onclick=()=>void openLeaderboard();
 // Opens over the results popup; the round is already on the board (the Worker posts every scored round).
 $('#see-board').onclick=()=>void openLeaderboard({round:roundId,onPlay:()=>$('#again').click()});
