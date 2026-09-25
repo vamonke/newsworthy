@@ -3,7 +3,7 @@ import { Round } from './round.js';
 import { GeminiRelay } from './relay.js';
 import { MODEL } from './reactor.js';
 import { toDataPoint, playerId, SERVER_EVENT_TYPES } from './events.js';
-import { TOP, RANK, ROUND, toBoard, listsPhoto } from './leaderboard.js';
+import { TOP, RANK, ROUND, BEST, toBoard, listsPhoto } from './leaderboard.js';
 
 // Records an analytics event from the Worker itself, e.g. demand for live slots.
 async function record(env, ip, event) {
@@ -49,9 +49,12 @@ async function api(request, env, path, ip) {
   }
   if (path === 'leaderboard' && request.method === 'GET') {
     if (env.API_LIMITER && !(await env.API_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many requests. Slow down a little.' });
-    // Top 10, each player's best round. With ?round=, the viewer's row is marked and their place returned.
+    // Top 10, each player's best round. The viewer is found by their player id, so their row is marked
+    // after a refresh too. ?round= (sent from the results popup) also covers a round with no player id.
     const round = new URL(request.url).searchParams.get('round');
-    const mine = ROUND_ID.test(round || '') ? await env.SCORES.prepare(ROUND).bind(round).first() : null;
+    const viewer = await playerId(env.PLAYER_SALT, ip);
+    const mine = (ROUND_ID.test(round || '') && await env.SCORES.prepare(ROUND).bind(round).first())
+      || (viewer && await env.SCORES.prepare(BEST).bind(viewer).first()) || null;
     const { results } = await env.SCORES.prepare(TOP).all();
     const rank = mine ? (await env.SCORES.prepare(RANK).bind(mine.player, mine.total).first()).rank : null;
     return reply(200, toBoard(results, mine, rank), { 'Cache-Control': 'no-store' });

@@ -46,6 +46,9 @@ export const RANK = `SELECT 1 + COUNT(*) AS rank FROM (
 
 export const ROUND = 'SELECT round, player, total, photos FROM scores WHERE round = ?1';
 
+// A player's best round, to find the viewer on the board.
+export const BEST = 'SELECT round, player, total, photos FROM scores WHERE player = ?1 ORDER BY total DESC, created ASC LIMIT 1';
+
 const photoUrl = (round, id) => `/api/photo/${round}/${id}.jpg`;
 
 // What the game gets: names, totals and photo links, never player ids. `you` marks the viewer's own row.

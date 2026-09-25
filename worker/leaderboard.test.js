@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { nameFor, soldPhotos, toBoard, listsPhoto, UPSERT, TOP, RANK, ROUND } from './src/leaderboard.js';
+import { nameFor, soldPhotos, toBoard, listsPhoto, UPSERT, TOP, RANK, ROUND, BEST } from './src/leaderboard.js';
 
 test('a player id always gives the same two-word name and number', () => {
   assert.equal(nameFor('bdf0edb99a002e95'), nameFor('bdf0edb99a002e95'));
@@ -29,8 +29,9 @@ function board() {
     db.prepare(UPSERT).run(round, player, nameFor(player), total, JSON.stringify(photos), created);
   const top = () => db.prepare(TOP).all();
   const round = (id) => db.prepare(ROUND).get(id);
+  const best = (player) => db.prepare(BEST).get(player);
   const rank = (mine) => db.prepare(RANK).get(mine.player, mine.total).rank;
-  return { post, top, round, rank };
+  return { post, top, round, rank, best };
 }
 
 test('the board shows each player’s best round, top 10', () => {
@@ -76,6 +77,19 @@ test('the board marks the viewer’s row and never sends player ids', () => {
   assert.deepEqual(out.you, { rank: 2, total: 4000 });
   assert.equal(out.top[0].photos[0].src, `/api/photo/${'a'.repeat(64)}/shot-1.jpg`);
   assert.ok(!JSON.stringify(out).includes('alice'));
+});
+
+test('a returning viewer is found by their player id, at their best round', () => {
+  const b = board();
+  b.post('a'.repeat(64), 'alice', 6000, 1);
+  b.post('b'.repeat(64), 'bob', 2000, 2);
+  b.post('c'.repeat(64), 'bob', 4000, 3);
+  const mine = b.best('bob');
+  assert.equal(mine.total, 4000);
+  const out = toBoard(b.top(), mine, b.rank(mine));
+  assert.deepEqual(out.top.map((r) => r.you), [false, true]);
+  assert.deepEqual(out.you, { rank: 2, total: 4000 });
+  assert.equal(b.best('nobody'), undefined);
 });
 
 test('only a round’s sold photos are served', () => {
