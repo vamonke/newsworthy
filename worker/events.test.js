@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { toDataPoint, playerId } from './src/events.js';
+import { toDataPoint, playerId, SERVER_EVENT_TYPES } from './src/events.js';
 
 test('an event fills the fixed columns', () => {
   const point = toDataPoint({ type: 'command_ack', session: 's-1', run: 'newsworthy-1', label: 'set_prompt', detail: 'x', value: 120 }, 'p1');
@@ -32,4 +32,10 @@ test('player ids are stable per salt and absent without one', async () => {
   assert.notEqual(await playerId('other', '1.2.3.4'), a);
   assert.notEqual(await playerId('salt', '1.2.3.5'), a);
   assert.equal(await playerId('', '1.2.3.4'), '');
+});
+
+test('demand events are only accepted from the Worker', () => {
+  assert.equal(toDataPoint({ type: 'turned_away', session: 's', label: 'full' }, ''), null);
+  assert.deepEqual(toDataPoint({ type: 'turned_away', session: 's', label: 'full' }, 'p', SERVER_EVENT_TYPES).blobs, ['turned_away', 'full', '', 'p', 's', '']);
+  assert.equal(toDataPoint({ type: 'closed', session: 's' }, '', SERVER_EVENT_TYPES), null);
 });

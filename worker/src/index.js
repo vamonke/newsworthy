@@ -2,12 +2,18 @@ import { Gate } from './gate.js';
 import { Round } from './round.js';
 import { GeminiRelay } from './relay.js';
 import { MODEL } from './reactor.js';
-import { toDataPoint, playerId } from './events.js';
+import { toDataPoint, playerId, SERVER_EVENT_TYPES } from './events.js';
+
+// Records an analytics event from the Worker itself, e.g. demand for live slots.
+async function record(env, ip, event) {
+  const point = toDataPoint(event, await playerId(env.PLAYER_SALT, ip), SERVER_EVENT_TYPES);
+  if (point) env.EVENTS?.writeDataPoint(point);
+}
 
 export { Gate, Round, GeminiRelay };
 
 const reply = (status, body, headers = {}) => Response.json(body, { status, headers });
-const LIMITS = { token: 1024, session: 20_000, photo: 1_900_000, event: 2048 };
+const LIMITS = { token: 4096, session: 20_000, photo: 1_900_000, event: 2048 };
 
 async function readJson(request, limit) {
   const text = await request.text();
@@ -52,6 +58,11 @@ async function api(request, env, path, ip) {
     if (!ticket && env.TOKEN_LIMITER && !(await env.TOKEN_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many new rounds. Wait a minute and try again.' });
     if (!ticket && !(await human(env, body.turnstile, ip, body.pass))) return reply(403, { error: 'The bot check didn’t go through. Try again.' });
     const result = await gate.open(ip, ticket);
+    // Demand for live slots, for showing how many people wanted to play. The game sends its page session and run id.
+    const ids = { session: typeof body.session === 'string' ? body.session : 'none', run: body.run };
+    if (result.jwt) await record(env, ip, { ...ids, type: 'slot_opened', label: ticket ? 'line' : 'direct' });
+    else if (result.queue && !ticket) await record(env, ip, { ...ids, type: 'line_joined', value: result.queue.position });
+    else if (result.error === 'full' || result.error === 'daily') await record(env, ip, { ...ids, type: 'turned_away', label: result.error });
     if (result.jwt) return reply(200, { jwt: result.jwt });
     // This wording keeps the game's "stop the previous session" button working.
     if (result.error === 'ip') return reply(409, { error: 'Another live session is still open. Stop it before starting another.' });

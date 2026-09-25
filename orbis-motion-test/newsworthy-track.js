@@ -2,7 +2,7 @@
 // the types listed in worker/src/events.js; the event table is in DEPLOYMENT.md, "Analytics".
 // sendBeacon still delivers when the page is navigating away, e.g. after clicking an outside link.
 const SESSION_KEY='newsworthy-page-session';
-const session=(()=>{try{let id=sessionStorage.getItem(SESSION_KEY);if(!id){id=crypto.randomUUID();sessionStorage.setItem(SESSION_KEY,id);}return id;}catch{return crypto.randomUUID();}})();
+export const session=(()=>{try{let id=sessionStorage.getItem(SESSION_KEY);if(!id){id=crypto.randomUUID();sessionStorage.setItem(SESSION_KEY,id);}return id;}catch{return crypto.randomUUID();}})();
 export function track(type,{run='',label='',detail='',value=0}={}){
  const body=JSON.stringify({type,session,run,label:String(label).slice(0,64),detail:String(detail).slice(0,200),value:Number(value)||0});
  try{if(navigator.sendBeacon?.('/api/event',new Blob([body],{type:'application/json'})))return;}catch{}

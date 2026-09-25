@@ -108,15 +108,22 @@ Columns never change meaning, so old queries keep working. Add new fields in new
 |---|---|---|---|---|
 | `page_opened` | the game page loads | referring site's hostname, empty if none | | |
 | `link_clicked` | a link with `data-track` is clicked | the link's `data-track` name | | |
+| `slot_opened` | the Worker hands out a live slot | `direct`, or `line` after waiting | | |
+| `line_joined` | all slots are busy and the player joins the line | | | place in line |
+| `turned_away` | the line is full, or today's cap is reached | `full` or `daily` | | |
 | `command_sent` | a command is sent to the live video | command | | ms spent queued |
 | `command_ack` | the live video confirms a command | command | | ms to confirm |
 | `model_error` | the live video rejects a command | | reason | |
 | `incident_clicked` | the player picks a scene | scene name | | |
-| `first_video_frame` | live video starts | | | |
+| `first_video_frame` | live video starts | | | seconds since the slot opened (loading time) |
 | `photo_captured` | a photo is taken | photo id | | |
 | `photo_result` | a photo is reviewed | photo id | | dollars earned |
 | `photo_failed` | a photo couldn't be reviewed | photo id | message the player saw | |
-| `closed` | the round's live session closes | | | |
+| `closed` | the round's live session closes | | | seconds since the slot opened (Reactor time used) |
+
+`slot_opened`, `line_joined` and `turned_away` are recorded by the Worker in `/api/token`, not by the game, and `/api/event` refuses them (`SERVER_EVENT_TYPES` in `events.js`). The game sends its page session and run id with `/api/token` so they join the round's other events. Time spent waiting is the gap between `line_joined` and `slot_opened` for the same session, and a `line_joined` with no `slot_opened` after it is a player who gave up.
+
+The Reactor links carry `utm_source=newsworthy&utm_medium=referral` and `utm_content` for the spot (`ticker`, `how_it_works`), so Reactor can see these visits in its own analytics.
 
 The link names are `header_profile`, `header_github`, `ticker_hire_me`, `ticker_reactor`, `ticker_nicky_case` and `how_it_works_visko_orbis`.
 

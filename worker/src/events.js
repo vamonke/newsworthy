@@ -4,19 +4,22 @@
 // index1 = run id (or the page session outside a round), blob1 = type, blob2 = label, blob3 = detail,
 // blob4 = player id, blob5 = page session, blob6 = run id, double1 = value.
 
-// Only these types are recorded; anything else is refused, so junk can't reach the data.
+// Only these types are accepted from the game; anything else is refused, so junk can't reach the data.
 export const EVENT_TYPES = new Set([
   'page_opened', 'link_clicked',
   'command_sent', 'command_ack', 'model_error', 'incident_clicked', 'first_video_frame', 'closed',
   'photo_captured', 'photo_result', 'photo_failed',
 ]);
 
+// Demand for live slots. Only the Worker records these, so the game can't fake them.
+export const SERVER_EVENT_TYPES = new Set(['slot_opened', 'line_joined', 'turned_away']);
+
 const text = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
 const ID = /^[a-zA-Z0-9-]{1,80}$/;
 
 // Returns the Analytics Engine data point for an event, or null if the event isn't valid.
-export function toDataPoint(event, player) {
-  if (!event || !EVENT_TYPES.has(event.type) || !ID.test(event.session ?? '')) return null;
+export function toDataPoint(event, player, types = EVENT_TYPES) {
+  if (!event || !types.has(event.type) || !ID.test(event.session ?? '')) return null;
   const run = ID.test(event.run ?? '') ? event.run : '';
   const value = Number(event.value);
   return {
