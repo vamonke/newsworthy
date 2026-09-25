@@ -14,20 +14,11 @@
 /orbis-motion-test/*
 !/orbis-motion-test/newsworthy*.js
 !/orbis-motion-test/news-design.html
-!/orbis-motion-test/news-design.css
-!/orbis-motion-test/news-studio.css
-!/orbis-motion-test/news-broadcast.css
 !/orbis-motion-test/news-wire.css
 !/orbis-motion-test/news-loading-motion.css
 !/orbis-motion-test/news-popups.css
-!/orbis-motion-test/news-howto-design.html
 !/orbis-motion-test/news-judge-api.js
 !/orbis-motion-test/news-judge.test.js
-!/orbis-motion-test/news-*preview.html
-!/orbis-motion-test/news-states-preview.js
-!/orbis-motion-test/news-photo-preview-data.js
-!/orbis-motion-test/news-photo-design.html
-!/orbis-motion-test/news-results-design.html
 !/orbis-motion-test/prompts.js
 !/orbis-motion-test/APPROVED-OPENING.md
 !/orbis-motion-test/public/
@@ -36,8 +27,6 @@
 !/orbis-motion-test/public/news-judge/
 !/orbis-motion-test/public/news-design/
 !/orbis-motion-test/public/audio/
-!/orbis-motion-test/public/brand-concepts/
-!/orbis-motion-test/public/brand-concepts/**
 **/node_modules/
 **/dist/
 **/.env*
@@ -53,11 +42,15 @@
 
 !orbis-motion-test/newsworthy-stars.js
 !/orbis-motion-test/news-intro*.css
-!/orbis-motion-test/news-loading-design.html
-!/orbis-motion-test/news-layout-design.html
 
-# Unused 23 MB video; kept locally, not shipped.
-/orbis-motion-test/public/news-design/preview.webm
+# Design previews, spikes and their images; kept locally, not tracked.
+/orbis-motion-test/public/news-design/*
+!/orbis-motion-test/public/news-design/newsworthy-icon.svg
+!/orbis-motion-test/public/news-design/newsworthy-mark.svg
+!/orbis-motion-test/public/news-design/wire-paper-texture.webp
+/orbis-motion-test/public/news-judge/*
+!/orbis-motion-test/public/news-judge/busy-opening-ufo-v4.png
+!/orbis-motion-test/public/news-judge/ordinary.jpg
 
 # Cloudflare Worker (production)
 !/worker/
