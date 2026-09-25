@@ -262,7 +262,11 @@ dialog.lb.np:not(#_) { width: min(1240px,92vw); }
 .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .np-money { font-size: clamp(28px,2.3vw,38px); }
 .lb.np:not(#_) .lb-status:empty { display: none; }
 .lb.np:not(#_) .lb-status { margin-top: 16px; text-align: center; }
-.lb.np:not(#_) .lb-who { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-top: clamp(16px,1.6vw,24px); }
+/* Player view header: rank over name on the left, Score over the amount on the right. */
+.lb.np:not(#_) .lb-who { align-items: flex-end; gap: 20px; }
+.lb.np:not(#_) .lb-who-name { display: grid; gap: clamp(8px,.8vw,12px); min-width: 0; }
+.lb.np:not(#_) .lb-who-name .np-meta { margin: 0; }
+.lb.np:not(#_) .lb-who-score { display: grid; justify-items: end; gap: 6px; text-align: right; }
 .lb.np:not(#_) .lb-who .np-title-s { display: flex; align-items: center; gap: 12px; font-size: clamp(30px,2.6vw,44px); }
 .lb.np:not(#_) .lb-who .lb-n svg { width: clamp(30px,2.4vw,40px); }
 #lb-player.np:not(#_) .recap-card { cursor: default; }
