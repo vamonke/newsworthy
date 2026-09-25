@@ -254,12 +254,12 @@ dialog.lb.np:not(#_) { width: min(1240px,92vw); }
 .lb.np:not(#_) .lb-row b { overflow: hidden; font: 900 clamp(22px,1.8vw,28px)/1 var(--np-cond); text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .lb.np:not(#_) .lb-thumbs { display: flex; gap: 6px; }
 .lb.np:not(#_) .lb-thumbs img { width: clamp(48px,4vw,64px); aspect-ratio: 4/3; object-fit: cover; padding: 3px; background: #f6f5f0; box-shadow: 0 1px 0 rgba(0,0,0,.2), 0 4px 10px rgba(0,0,0,.2); }
-.lb.np:not(#_) .lb-row .np-money { min-width: 4.2ch; font-size: clamp(20px,1.5vw,26px); text-align: right; }
+.lb.np:not(#_) .lb-row .np-money { min-width: 4.2ch; font-size: clamp(22px,1.8vw,28px); text-align: right; }
 .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-row { grid-template-columns: clamp(44px,3.6vw,56px) minmax(0,1fr) auto auto; padding: clamp(12px,1.2vw,18px) 4px; }
 .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-row b { font-size: clamp(28px,2.3vw,38px); }
 .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-n svg { width: clamp(32px,2.6vw,42px); }
 .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-thumbs img { width: clamp(64px,5.4vw,88px); }
-.lb.np:not(#_) .lb-rows li:nth-child(-n+3) .np-money { font-size: clamp(26px,2vw,34px); }
+.lb.np:not(#_) .lb-rows li:nth-child(-n+3) .np-money { font-size: clamp(28px,2.3vw,38px); }
 .lb.np:not(#_) .lb-status:empty { display: none; }
 .lb.np:not(#_) .lb-status { margin-top: 16px; text-align: center; }
 .lb.np:not(#_) .lb-who { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-top: clamp(16px,1.6vw,24px); }
@@ -273,8 +273,8 @@ dialog.lb.np:not(#_) { width: min(1240px,92vw); }
   .lb.np:not(#_) .lb-row, .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-row { grid-template-columns: 40px minmax(0,1fr) auto; }
   .lb.np:not(#_) .lb-thumbs { display: none; }
   .lb.np:not(#_) .lb-row b { font-size: 20px; white-space: normal; }
-  .lb.np:not(#_) .lb-row .np-money { font-size: 22px; }
+  .lb.np:not(#_) .lb-row .np-money { font-size: 20px; }
   .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-row b { font-size: 24px; }
-  .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .np-money { font-size: 26px; }
+  .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .np-money { font-size: 24px; }
   .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-n svg { width: 36px; }
 }
