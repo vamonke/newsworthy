@@ -237,6 +237,7 @@ dialog#photo-detail.np:not(#_) { width: min(1240px,92vw); }
    bigger with a gold, silver or bronze trophy. Approved in news-leaderboard-design.html. */
 #result.np:not(#_) .np-actions { flex-wrap: nowrap; }
 #result.np:not(#_) .np-actions .np-btn { flex: 1 1 0; max-width: clamp(300px,26vw,420px); min-width: 0; text-align: center; }
+dialog.lb.np:not(#_) { width: min(1240px,92vw); }
 .lb.np:not(#_) .np-top { align-items: flex-end; }
 .lb.np:not(#_) .lb-rows { list-style: none; margin: clamp(20px,2vw,28px) 0 0; padding: 0 6px 0 0; border-top: 2px solid var(--wire-ink); max-height: calc(100dvh - clamp(320px,28vw,410px)); overflow-y: auto; }
 .lb.np:not(#_) .lb-row { display: grid; grid-template-columns: clamp(40px,3.4vw,52px) minmax(0,1fr) auto auto; gap: clamp(12px,1.4vw,20px); align-items: center; width: 100%; padding: 10px 4px; border: 0; border-bottom: 1px solid var(--wire-ink); background: none; color: var(--wire-ink); text-align: left; cursor: pointer; }
