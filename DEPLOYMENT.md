@@ -119,7 +119,7 @@ Columns never change meaning, so old queries keep working. Add new fields in new
 | `photo_captured` | a photo is taken | photo id | | |
 | `photo_result` | a photo is reviewed | photo id | | dollars earned |
 | `photo_failed` | a photo couldn't be reviewed | photo id | message the player saw | |
-| `closed` | the round's live session closes | | | seconds since the slot opened (Reactor time used) |
+| `closed` | the round's live session closes | `ended` (round finished or stopped in the game) or `left` (page closed mid-round) | | seconds since the slot opened (Reactor time used) |
 
 `slot_opened`, `line_joined` and `turned_away` are recorded by the Worker in `/api/token`, not by the game, and `/api/event` refuses them (`SERVER_EVENT_TYPES` in `events.js`). The game sends its page session and run id with `/api/token` so they join the round's other events. Time spent waiting is the gap between `line_joined` and `slot_opened` for the same session, and a `line_joined` with no `slot_opened` after it is a player who gave up.
 
