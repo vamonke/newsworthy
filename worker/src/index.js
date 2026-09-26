@@ -116,7 +116,8 @@ async function api(request, env, path, ip) {
     if (typeof jwt !== 'string' || !(await gate.claimRound(jwt))) return reply(403, { error: 'Start a live session before a round.' });
     // The game opens its round as soon as live video shows, and the round can't start without this
     // request, so first_video_frame is recorded here. As a beacon to /api/event it went missing.
-    await record(env, ip, { type: 'first_video_frame', session, run, value });
+    // Analytics must never stop a round, so a failed write is only logged.
+    await record(env, ip, { type: 'first_video_frame', session, run, value }).catch((e) => console.error('first_video_frame not recorded:', e?.message));
     const id = env.ROUND.newUniqueId();
     return reply(200, await env.ROUND.get(id).start(id.toString(), await playerId(env.PLAYER_SALT, ip)));
   }
