@@ -112,8 +112,11 @@ async function api(request, env, path, ip) {
   if (path === 'stop-sessions') { await gate.stopIp(ip); return reply(200, { stopped: true }); }
   if (path === 'news-round') {
     // Only a live session (handed out after the bot check) can open a round, once.
-    const { jwt } = await readJson(request, LIMITS.session);
+    const { jwt, session, run, value } = await readJson(request, LIMITS.session);
     if (typeof jwt !== 'string' || !(await gate.claimRound(jwt))) return reply(403, { error: 'Start a live session before a round.' });
+    // The game opens its round as soon as live video shows, and the round can't start without this
+    // request, so first_video_frame is recorded here. As a beacon to /api/event it went missing.
+    await record(env, ip, { type: 'first_video_frame', session, run, value });
     const id = env.ROUND.newUniqueId();
     return reply(200, await env.ROUND.get(id).start(id.toString(), await playerId(env.PLAYER_SALT, ip)));
   }

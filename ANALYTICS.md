@@ -80,9 +80,10 @@ In Reactor's own analytics, our visits show up as `utm_source=newsworthy`, `utm_
 
 ## Caveats
 
-- **Sampling:** Analytics Engine drops some rows even at low traffic. Each row's `_sample_interval` says how many events it stands for, so totals use `sum(_sample_interval)`. A single round's timeline can have gaps: `first_video_frame` was missing from two test rounds for this reason.
+- **Sampling:** Analytics Engine drops some rows even at low traffic. Each row's `_sample_interval` says how many events it stands for, so totals use `sum(_sample_interval)`. A single round's timeline can have gaps.
 - **Unique players are unique networks.** An office or campus counts as one; one person on Wi-Fi and then mobile data counts as two.
 - **Salt:** `PLAYER_SALT` was generated at deploy and never saved. Leave it alone, since changing it makes everyone look new.
+- **`first_video_frame` before the 2026-09-26 fix undercounts.** Since 2026-09-25 14:25 UTC, 35 rounds had `slot_opened`, 23 had `photo_captured` and only 15 had `first_video_frame`, though a round can't take a photo without it. The game sent it once per round as a beacon to `/api/event`, and those went missing, while events sent many times per round (commands, photos) still showed up at least once. The Worker now records it from `/api/news-round`, a request every round needs to start. For older rounds, rounds with a `photo_captured` are a lower bound for rounds that got live video.
 - `closed` before 2026-09-25 ~14:43 is missing for players who left mid-round, so Reactor minutes before then undercount.
 - Old rows (before 2026-09-25 ~13:55) have no player id, scene name or photo value.
 
@@ -95,5 +96,5 @@ In Reactor's own analytics, our visits show up as `utm_source=newsworthy`, `utm_
 
 ## Log
 
-- **2026-09-26:** added the leaderboard. Every scored round is now a row in D1 `scores`, and every judged photo is kept in R2 (since 2026-09-25). First posted rounds: $5,502 (a player) and $6,188 (a test round, kept on the board).
+- **2026-09-26:** found `first_video_frame` missing from about a third of rounds and moved it to the Worker's `/api/news-round` (see "Caveats"). Added the leaderboard. Every scored round is now a row in D1 `scores`, and every judged photo is kept in R2 (since 2026-09-25). First posted rounds: $5,502 (a player) and $6,188 (a test round, kept on the board).
 - **2026-09-25:** checked the first numbers (above). Added player ids, `/api/event`, link tracking, slot demand, Reactor time and UTM tags; deployed three times. Each deploy was play-tested in production: rounds started, got live video, took a photo that sold for $1,000, and closed; events arrived with the new columns. Found and fixed `closed` missing when a player leaves mid-round.

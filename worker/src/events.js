@@ -7,12 +7,13 @@
 // Only these types are accepted from the game; anything else is refused, so junk can't reach the data.
 export const EVENT_TYPES = new Set([
   'page_opened', 'link_clicked',
-  'command_sent', 'command_ack', 'model_error', 'incident_clicked', 'first_video_frame', 'closed',
+  'command_sent', 'command_ack', 'model_error', 'incident_clicked', 'closed',
   'photo_captured', 'photo_result', 'photo_failed',
 ]);
 
-// Demand for live slots. Only the Worker records these, so the game can't fake them.
-export const SERVER_EVENT_TYPES = new Set(['slot_opened', 'line_joined', 'turned_away']);
+// Demand for live slots, and live video starting (from /api/news-round). Only the Worker records
+// these, so the game can't fake them and a dropped beacon can't lose them.
+export const SERVER_EVENT_TYPES = new Set(['slot_opened', 'line_joined', 'turned_away', 'first_video_frame']);
 
 const text = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
 const ID = /^[a-zA-Z0-9-]{1,80}$/;

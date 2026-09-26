@@ -39,3 +39,13 @@ test('demand events are only accepted from the Worker', () => {
   assert.deepEqual(toDataPoint({ type: 'turned_away', session: 's', label: 'full' }, 'p', SERVER_EVENT_TYPES).blobs, ['turned_away', 'full', '', 'p', 's', '']);
   assert.equal(toDataPoint({ type: 'closed', session: 's' }, '', SERVER_EVENT_TYPES), null);
 });
+
+test('first_video_frame comes only from the Worker, with the run and loading seconds', () => {
+  // The game can no longer send it as a beacon; /api/news-round records it (see index.js).
+  assert.equal(toDataPoint({ type: 'first_video_frame', session: 's', run: 'newsworthy-1', value: 42 }, ''), null);
+  assert.deepEqual(toDataPoint({ type: 'first_video_frame', session: 's', run: 'newsworthy-1', value: 42 }, 'p', SERVER_EVENT_TYPES), {
+    indexes: ['newsworthy-1'], blobs: ['first_video_frame', '', '', 'p', 's', 'newsworthy-1'], doubles: [42],
+  });
+  // A round opened by an old page (no session or run) records nothing rather than a row with no round.
+  assert.equal(toDataPoint({ type: 'first_video_frame' }, 'p', SERVER_EVENT_TYPES), null);
+});
