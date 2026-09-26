@@ -91,6 +91,16 @@ The dashboard can do all of these under Workers & Pages → newsworthy.
 - `curl -s https://newsworthy.vamonke.com/api/status` shows slots in use.
 - Game and page events go to Analytics Engine. See Analytics below.
 - **Failed photo reviews** ("Couldn't review this photo") are recorded as `photo_failed` events, with the message players saw in blob3: `SELECT timestamp, index1, blob3 FROM newsworthy_events WHERE blob1='photo_failed' ORDER BY timestamp DESC`. The cause is in Workers Logs. Each failed Gemini attempt logs `[judge] attempt N failed: …` from the Round Durable Object, with the HTTP status and the start of the body, a timeout, a cancel, or the unreadable or invalid output. Every `/api` error also logs `/api/<path> failed: …` before its 502.
+- **Reading Workers Logs from the terminal.** Wrangler's login can't read them, so use the read-only token "newsworthy logs read" (Workers Observability: Read, vamonke account only), saved on Varick's Mac at `~/.config/newsworthy/cf-logs-token`. If it's lost, roll it under My Profile → API Tokens. Logs keep only a few days. Search the last 2 hours for judge failures:
+
+  ```bash
+  LT=$(cat ~/.config/newsworthy/cf-logs-token); NOW=$(($(date +%s)*1000))
+  curl -s https://api.cloudflare.com/client/v4/accounts/6fd560e6892546be11ef30883a03dd71/workers/observability/telemetry/query \
+    -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' \
+    -d "{\"queryId\":\"adhoc\",\"timeframe\":{\"from\":$((NOW-7200000)),\"to\":$NOW},\"view\":\"events\",\"limit\":20,\"parameters\":{\"needle\":{\"value\":\"[judge]\"}}}" \
+    | jq -r '.result.events.events[] | "\(.timestamp/1000|floor|todate) \(.source.message // .["$metadata"].message)"'
+  ```
+- **Gemini `402`** means the prepaid credits ran out (it happened on 26 Sep 2026). Top up at https://ai.studio/projects. No redeploy is needed.
 
 ## Analytics
 
