@@ -29,13 +29,17 @@ export function soldPhotos(snapshot) {
     .sort((a, b) => b.earned - a.earned);
 }
 
+// The player's country, for the flag on the board: Cloudflare's two-letter code for their IP. Its other
+// values (XX for unknown, T1 for Tor) and anything else are kept as '', which shows no flag.
+export const countryCode = (code) => (/^[A-Z]{2}$/.test(code ?? '') && code !== 'XX' ? code : '');
+
 // Rounds only ever gain money. Writes can land out of order, so one with a lower total is ignored.
-export const UPSERT = `INSERT INTO scores (round, player, name, total, photos, created, updated) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)
+export const UPSERT = `INSERT INTO scores (round, player, name, total, photos, created, updated, country) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, ?7)
   ON CONFLICT(round) DO UPDATE SET total = excluded.total, photos = excluded.photos, updated = excluded.updated
   WHERE excluded.total >= scores.total`;
 
 // Each player's best round (earliest wins a tie), top 10.
-export const TOP = `SELECT round, player, name, total, photos FROM (
+export const TOP = `SELECT round, player, name, total, photos, country FROM (
     SELECT *, ROW_NUMBER() OVER (PARTITION BY player ORDER BY total DESC, created ASC) AS n FROM scores
   ) WHERE n = 1 ORDER BY total DESC, created ASC LIMIT 10`;
 
@@ -44,18 +48,19 @@ export const RANK = `SELECT 1 + COUNT(*) AS rank FROM (
     SELECT player, MAX(total) AS best FROM scores WHERE player != ?1 GROUP BY player
   ) WHERE best > ?2`;
 
-export const ROUND = 'SELECT round, player, total, photos FROM scores WHERE round = ?1';
+export const ROUND = 'SELECT round, player, total, photos, country FROM scores WHERE round = ?1';
 
 // A player's best round, to find the viewer on the board.
-export const BEST = 'SELECT round, player, total, photos FROM scores WHERE player = ?1 ORDER BY total DESC, created ASC LIMIT 1';
+export const BEST = 'SELECT round, player, total, photos, country FROM scores WHERE player = ?1 ORDER BY total DESC, created ASC LIMIT 1';
 
 const photoUrl = (round, id) => `/api/photo/${round}/${id}.jpg`;
 
-// What the game gets: names, totals and photo links, never player ids. `you` marks the viewer's own row.
+// What the game gets: names, countries, totals and photo links, never player ids. `you` marks the viewer's own row.
 export function toBoard(rows, mine, rank) {
   return {
     top: rows.map((row) => ({
       name: row.name,
+      country: row.country || '',
       total: row.total,
       you: Boolean(mine && row.player === mine.player),
       photos: JSON.parse(row.photos).map((p) => ({ src: photoUrl(row.round, p.id), headline: p.headline, earned: p.earned })),

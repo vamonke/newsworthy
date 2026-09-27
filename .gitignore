@@ -28,6 +28,7 @@
 !/orbis-motion-test/public/news-judge/
 !/orbis-motion-test/public/news-design/
 !/orbis-motion-test/public/audio/
+!/orbis-motion-test/public/flags/
 **/node_modules/
 **/dist/
 **/.env*

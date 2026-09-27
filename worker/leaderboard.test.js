@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { nameFor, soldPhotos, toBoard, listsPhoto, UPSERT, TOP, RANK, ROUND, BEST } from './src/leaderboard.js';
+import { nameFor, soldPhotos, toBoard, listsPhoto, countryCode, UPSERT, TOP, RANK, ROUND, BEST } from './src/leaderboard.js';
 
 test('a player id always gives the same two-word name and number', () => {
   assert.equal(nameFor('bdf0edb99a002e95'), nameFor('bdf0edb99a002e95'));
@@ -24,9 +24,9 @@ test('only sold photos go on the board, best first', () => {
 // The queries run against the real schema in SQLite, which is what D1 is.
 function board() {
   const db = new DatabaseSync(':memory:');
-  db.exec(readFileSync(new URL('./migrations/0001_scores.sql', import.meta.url), 'utf8'));
-  const post = (round, player, total, created, photos = [{ id: 'shot-1', headline: 'UFO', earned: total }]) =>
-    db.prepare(UPSERT).run(round, player, nameFor(player), total, JSON.stringify(photos), created);
+  for (const file of ['0001_scores.sql', '0002_country.sql']) db.exec(readFileSync(new URL(`./migrations/${file}`, import.meta.url), 'utf8'));
+  const post = (round, player, total, created, photos = [{ id: 'shot-1', headline: 'UFO', earned: total }], country = '') =>
+    db.prepare(UPSERT).run(round, player, nameFor(player), total, JSON.stringify(photos), created, country);
   const top = () => db.prepare(TOP).all();
   const round = (id) => db.prepare(ROUND).get(id);
   const best = (player) => db.prepare(BEST).get(player);
@@ -90,6 +90,21 @@ test('a returning viewer is found by their player id, at their best round', () =
   assert.deepEqual(out.top.map((r) => r.you), [false, true]);
   assert.deepEqual(out.you, { rank: 2, total: 4000 });
   assert.equal(b.best('nobody'), undefined);
+});
+
+test('each row carries its round’s country for the flag', () => {
+  const b = board();
+  b.post('a'.repeat(64), 'alice', 6000, 1, undefined, 'SG');
+  b.post('b'.repeat(64), 'bob', 4000, 2);
+  b.post('c'.repeat(64), 'alice', 1000, 3, undefined, 'GB'); // a lower round elsewhere doesn't change her row
+  const out = toBoard(b.top(), null, null);
+  assert.deepEqual(out.top.map((r) => [r.name, r.country]), [[nameFor('alice'), 'SG'], [nameFor('bob'), '']]);
+  assert.equal(b.best('alice').country, 'SG');
+});
+
+test('only real two-letter countries are kept', () => {
+  assert.equal(countryCode('SG'), 'SG');
+  for (const code of ['XX', 'T1', 'sg', 'SGP', '', undefined, null]) assert.equal(countryCode(code), '', String(code));
 });
 
 test('only a round’s sold photos are served', () => {

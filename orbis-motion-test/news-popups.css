@@ -252,6 +252,11 @@ dialog.lb.np:not(#_) { width: min(1240px,92vw); }
 .lb.np:not(#_) .lb-n.silver { color: #8e959a; }
 .lb.np:not(#_) .lb-n.bronze { color: #b0693a; }
 .lb.np:not(#_) .lb-row b { overflow: hidden; font: 900 clamp(22px,1.8vw,28px)/1 var(--np-cond); text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+/* The player's country flag before their name. A border, not an outline: the name clips anything outside its box.
+   No country known: the space stays, so names line up. Approved in news-leaderboard-design.html. */
+.lb.np:not(#_) .lb-flag { display: inline-block; width: 1.1em; aspect-ratio: 4/3; margin-right: .35em; vertical-align: -.06em; object-fit: cover; box-sizing: border-box; border: 1.5px solid var(--wire-ink); }
+.lb.np:not(#_) .lb-flag.none { visibility: hidden; }
+.lb.np:not(#_) .lb-who .lb-flag { margin: 0; vertical-align: 0; }
 .lb.np:not(#_) .lb-thumbs { display: flex; gap: 6px; }
 .lb.np:not(#_) .lb-thumbs img { width: clamp(48px,4vw,64px); aspect-ratio: 4/3; object-fit: cover; padding: 3px; background: #f6f5f0; box-shadow: 0 1px 0 rgba(0,0,0,.2), 0 4px 10px rgba(0,0,0,.2); }
 .lb.np:not(#_) .lb-row .np-money { min-width: 4.2ch; font-size: clamp(22px,1.8vw,28px); text-align: right; }

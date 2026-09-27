@@ -115,7 +115,7 @@ async function api(request, env, path, ip) {
     const { jwt } = await readJson(request, LIMITS.session);
     if (typeof jwt !== 'string' || !(await gate.claimRound(jwt))) return reply(403, { error: 'Start a live session before a round.' });
     const id = env.ROUND.newUniqueId();
-    return reply(200, await env.ROUND.get(id).start(id.toString(), await playerId(env.PLAYER_SALT, ip)));
+    return reply(200, await env.ROUND.get(id).start(id.toString(), await playerId(env.PLAYER_SALT, ip), request.cf?.country));
   }
   if (path === 'news-photo') {
     const photo = await readJson(request, LIMITS.photo);

@@ -2,7 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { createNewsJudge } from '../../orbis-motion-test/news-judge-api.js';
 import { withRelay } from './relay-core.js';
 import { relayStub } from './relay.js';
-import { nameFor, soldPhotos, UPSERT } from './leaderboard.js';
+import { nameFor, soldPhotos, countryCode, UPSERT } from './leaderboard.js';
 
 const KEEP_MS = 60 * 60 * 1000;
 
@@ -25,6 +25,7 @@ export class Round extends DurableObject {
       for (let i = 0; i < meta.acceptedCount; i++) accepted.push(await ctx.storage.get(`accepted:${i}`));
       this.id = meta.id;
       this.player = meta.player;
+      this.country = meta.country || '';
       this.written = [...accepted];
       this.judge.restore(meta.id, { ...meta.round, accepted });
     });
@@ -32,7 +33,7 @@ export class Round extends DurableObject {
 
   async save() {
     const { accepted, ...round } = this.judge.snapshot(this.id);
-    const entries = { meta: { id: this.id, player: this.player, acceptedCount: accepted.length, round } };
+    const entries = { meta: { id: this.id, player: this.player, country: this.country, acceptedCount: accepted.length, round } };
     // Accepted photos are stored one per key: together they can pass the 2 MB value limit. Only new
     // photos, or one replaced by a later shot of the same incident, are written again.
     accepted.forEach((photo, i) => { if (this.written[i] !== photo) entries[`accepted:${i}`] = photo; });
@@ -40,10 +41,11 @@ export class Round extends DurableObject {
     this.written = [...accepted];
   }
 
-  // `player` is the player id of whoever opened the round, for the leaderboard.
-  async start(id, player) {
+  // `player` is the player id of whoever opened the round and `country` where they are, for the leaderboard.
+  async start(id, player, country) {
     this.id = id;
     this.player = player || id;
+    this.country = countryCode(country);
     this.judge.create(id);
     await this.save();
     await this.ctx.storage.setAlarm(Date.now() + KEEP_MS);
@@ -70,7 +72,7 @@ export class Round extends DurableObject {
     if (!this.env.SCORES || !snapshot?.total) return;
     const now = Date.now();
     const player = this.player || this.id; // rounds started before the leaderboard have no player id
-    await this.env.SCORES.prepare(UPSERT).bind(this.id, player, nameFor(player), snapshot.total, JSON.stringify(soldPhotos(snapshot)), now).run();
+    await this.env.SCORES.prepare(UPSERT).bind(this.id, player, nameFor(player), snapshot.total, JSON.stringify(soldPhotos(snapshot)), now, this.country || '').run();
   }
 
   // Copies the round as saved here (results, and thumbnails of the accepted photos) to R2.
