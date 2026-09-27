@@ -2,13 +2,15 @@
 // Analytics Engine dataset "newsworthy_events". The event table and queries are in DEPLOYMENT.md, "Analytics".
 // Columns never change meaning, so old rows and saved queries stay valid:
 // index1 = run id (or the page session outside a round), blob1 = type, blob2 = label, blob3 = detail,
-// blob4 = player id, blob5 = page session, blob6 = run id, double1 = value.
+// blob4 = player id, blob5 = page session, blob6 = run id, blob7 = country (Cloudflare's two-letter code),
+// double1 = value, double2 = value2, double3 = value3 (see the event table).
 
 // Only these types are accepted from the game; anything else is refused, so junk can't reach the data.
 export const EVENT_TYPES = new Set([
   'page_opened', 'link_clicked',
   'command_sent', 'command_ack', 'model_error', 'incident_clicked', 'first_video_frame', 'closed',
   'photo_captured', 'photo_result', 'photo_failed',
+  'stream_fps', 'slow_video',
 ]);
 
 // Demand for live slots. Only the Worker records these, so the game can't fake them.
@@ -17,15 +19,17 @@ export const SERVER_EVENT_TYPES = new Set(['slot_opened', 'line_joined', 'turned
 const text = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
 const ID = /^[a-zA-Z0-9-]{1,80}$/;
 
+const number = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+const COUNTRY = /^[A-Z0-9]{2}$/;
+
 // Returns the Analytics Engine data point for an event, or null if the event isn't valid.
-export function toDataPoint(event, player, types = EVENT_TYPES) {
+export function toDataPoint(event, player, types = EVENT_TYPES, country = '') {
   if (!event || !types.has(event.type) || !ID.test(event.session ?? '')) return null;
   const run = ID.test(event.run ?? '') ? event.run : '';
-  const value = Number(event.value);
   return {
     indexes: [run || event.session],
-    blobs: [event.type, text(event.label, 64), text(event.detail, 200), player, event.session, run],
-    doubles: [Number.isFinite(value) ? value : 0],
+    blobs: [event.type, text(event.label, 64), text(event.detail, 200), player, event.session, run, COUNTRY.test(country) ? country : ''],
+    doubles: [number(event.value), number(event.value2), number(event.value3)],
   };
 }
 

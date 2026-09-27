@@ -6,8 +6,8 @@ import { toDataPoint, playerId, SERVER_EVENT_TYPES } from './events.js';
 import { TOP, RANK, ROUND, BEST, toBoard, listsPhoto } from './leaderboard.js';
 
 // Records an analytics event from the Worker itself, e.g. demand for live slots.
-async function record(env, ip, event) {
-  const point = toDataPoint(event, await playerId(env.PLAYER_SALT, ip), SERVER_EVENT_TYPES);
+async function record(env, request, ip, event) {
+  const point = toDataPoint(event, await playerId(env.PLAYER_SALT, ip), SERVER_EVENT_TYPES, request.cf?.country);
   if (point) env.EVENTS?.writeDataPoint(point);
 }
 
@@ -83,9 +83,9 @@ async function api(request, env, path, ip) {
     const result = await gate.open(ip, ticket);
     // Demand for live slots, for showing how many people wanted to play. The game sends its page session and run id.
     const ids = { session: typeof body.session === 'string' ? body.session : 'none', run: body.run };
-    if (result.jwt) await record(env, ip, { ...ids, type: 'slot_opened', label: ticket ? 'line' : 'direct' });
-    else if (result.queue && !ticket) await record(env, ip, { ...ids, type: 'line_joined', value: result.queue.position });
-    else if (result.error === 'full' || result.error === 'daily') await record(env, ip, { ...ids, type: 'turned_away', label: result.error });
+    if (result.jwt) await record(env, request, ip, { ...ids, type: 'slot_opened', label: ticket ? 'line' : 'direct' });
+    else if (result.queue && !ticket) await record(env, request, ip, { ...ids, type: 'line_joined', value: result.queue.position });
+    else if (result.error === 'full' || result.error === 'daily') await record(env, request, ip, { ...ids, type: 'turned_away', label: result.error });
     if (result.jwt) return reply(200, { jwt: result.jwt });
     // This wording keeps the game's "stop the previous session" button working.
     if (result.error === 'ip') return reply(409, { error: 'Another live session is still open. Stop it before starting another.' });
@@ -124,7 +124,7 @@ async function api(request, env, path, ip) {
   }
   if (path === 'event') {
     // One analytics event per request; see events.js for the columns.
-    const point = toDataPoint(await readJson(request, LIMITS.event), await playerId(env.PLAYER_SALT, ip));
+    const point = toDataPoint(await readJson(request, LIMITS.event), await playerId(env.PLAYER_SALT, ip), undefined, request.cf?.country);
     if (!point) return reply(400, { error: 'Unknown event' });
     env.EVENTS?.writeDataPoint(point);
     return reply(200, { saved: true });

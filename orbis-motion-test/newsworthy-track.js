@@ -1,10 +1,10 @@
-// Analytics: track(type, {run, label, detail, value}) sends one event to /api/event. The Worker only accepts
+// Analytics: track(type, {run, label, detail, value, value2, value3}) sends one event to /api/event. The Worker only accepts
 // the types listed in worker/src/events.js; the event table is in DEPLOYMENT.md, "Analytics".
 // sendBeacon still delivers when the page is navigating away, e.g. after clicking an outside link.
 const SESSION_KEY='newsworthy-page-session';
 export const session=(()=>{try{let id=sessionStorage.getItem(SESSION_KEY);if(!id){id=crypto.randomUUID();sessionStorage.setItem(SESSION_KEY,id);}return id;}catch{return crypto.randomUUID();}})();
-export function track(type,{run='',label='',detail='',value=0}={}){
- const body=JSON.stringify({type,session,run,label:String(label).slice(0,64),detail:String(detail).slice(0,200),value:Number(value)||0});
+export function track(type,{run='',label='',detail='',value=0,value2=0,value3=0}={}){
+ const body=JSON.stringify({type,session,run,label:String(label).slice(0,64),detail:String(detail).slice(0,200),value:Number(value)||0,value2:Number(value2)||0,value3:Number(value3)||0});
  try{if(navigator.sendBeacon?.('/api/event',new Blob([body],{type:'application/json'})))return;}catch{}
  void fetch('/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});
 }

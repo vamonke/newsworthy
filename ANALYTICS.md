@@ -27,6 +27,7 @@ All game events go to the Analytics Engine dataset `newsworthy_events` on the Cl
 | 2026-09-25 ~13:55 | Unique players (hashed IP), `page_opened` with the referring site, `link_clicked` on every outside link, scene names, dollars earned per photo. |
 | 2026-09-25 ~14:23 | UTM tags on the Reactor links, `slot_opened`, `line_joined`, `turned_away`, Reactor seconds per round on `closed`, loading seconds on `first_video_frame`. |
 | 2026-09-25 ~14:43 | `closed` also recorded when a player leaves mid-round (label `left`; normal ends are `ended`). |
+| 2026-09-27 | Country on every event (blob7). `stream_fps` per round (frame rate the player saw) and `slow_video` when the slow video notice shows or goes away. |
 
 Since 2026-09-26 every scored round is also a row in the D1 table `scores` (database `newsworthy`: round, player id, total, sold photos), and since 2026-09-25 every judged photo is kept in the R2 bucket `newsworthy-photos`. Both are described in DEPLOYMENT.md, "Leaderboard and saved photos". For totals per round, query D1 instead of adding up `photo_result` rows: D1 isn't sampled. For example, `npx wrangler d1 execute newsworthy --remote --command "SELECT COUNT(*), MAX(total) FROM scores WHERE player != 'bdf0edb99a002e95'"`.
 
@@ -63,6 +64,8 @@ X="blob4 != 'bdf0edb99a002e95'"
 | Reactor minutes, rounds ended vs left | `q "SELECT blob2 AS how, sum(_sample_interval) AS rounds, sum(double1 * _sample_interval) / 60 AS minutes FROM newsworthy_events WHERE blob1 = 'closed' AND blob2 != '' AND $X GROUP BY how"` |
 | Link clicks, and players who clicked | `q "SELECT blob2 AS link, sum(_sample_interval) AS clicks, count(DISTINCT blob4) AS players FROM newsworthy_events WHERE blob1 = 'link_clicked' AND $X GROUP BY link ORDER BY clicks DESC"` |
 | Demand: slots, line, turned away | `q "SELECT blob1, blob2, sum(_sample_interval) AS n, count(DISTINCT blob4) AS players FROM newsworthy_events WHERE blob1 IN ('slot_opened', 'line_joined', 'turned_away') AND $X GROUP BY blob1, blob2"` |
+| Frame rate by country | `q "SELECT blob7 AS country, sum(_sample_interval) AS rounds, round(avg(double1),1) AS fps, round(avg(double2)) AS pct_slow_seconds, round(avg(double3),1) AS first_15s_fps FROM newsworthy_events WHERE blob1 = 'stream_fps' AND $X GROUP BY country ORDER BY rounds DESC"` |
+| Rounds that showed the slow video notice | `q "SELECT count(DISTINCT blob6) AS rounds FROM newsworthy_events WHERE blob1 = 'slow_video' AND blob2 = 'started' AND $X"` |
 | Referring sites | `q "SELECT blob2 AS site, count(DISTINCT blob5) AS visits FROM newsworthy_events WHERE blob1 = 'page_opened' AND $X GROUP BY site ORDER BY visits DESC"` |
 | Photos and earnings | `q "SELECT sum(_sample_interval) AS photos, sum(double1 * _sample_interval) AS dollars FROM newsworthy_events WHERE blob1 = 'photo_result' AND blob4 != '' AND $X"` |
 | Scenes picked | `q "SELECT blob2 AS scene, sum(_sample_interval) AS n FROM newsworthy_events WHERE blob1 = 'incident_clicked' AND blob2 != '' AND $X GROUP BY scene ORDER BY n DESC"` |

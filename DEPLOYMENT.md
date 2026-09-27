@@ -106,7 +106,7 @@ The dashboard can do all of these under Workers & Pages → newsworthy.
 
 Why we track, the numbers so far and ready-made queries are in [ANALYTICS.md](ANALYTICS.md). This section is the technical reference.
 
-The game sends every event to `POST /api/event` with `track(type, {run, label, detail, value})` from `orbis-motion-test/newsworthy-track.js`, which uses `sendBeacon` so clicks on outside links still arrive. The Worker (`worker/src/events.js`) accepts only the types it lists, adds the player id, and writes one row to the Analytics Engine dataset `newsworthy_events`.
+The game sends every event to `POST /api/event` with `track(type, {run, label, detail, value, value2, value3})` from `orbis-motion-test/newsworthy-track.js`, which uses `sendBeacon` so clicks on outside links still arrive. The Worker (`worker/src/events.js`) accepts only the types it lists, adds the player id, and writes one row to the Analytics Engine dataset `newsworthy_events`.
 
 Columns never change meaning, so old queries keep working. Add new fields in new columns.
 
@@ -119,7 +119,10 @@ Columns never change meaning, so old queries keep working. Add new fields in new
 | blob4 | player id (hashed IP) |
 | blob5 | page session: one per browser tab, kept across reloads |
 | blob6 | run id: one per round, empty outside a round |
+| blob7 | country: Cloudflare's two-letter code for the player's IP (since 2026-09-27) |
 | double1 | value (see the event table) |
+| double2 | value2 (see the event table; 0 when unused, since 2026-09-27) |
+| double3 | value3 (see the event table; 0 when unused, since 2026-09-27) |
 
 | Event | When | label | detail | value |
 |---|---|---|---|---|
@@ -137,6 +140,8 @@ Columns never change meaning, so old queries keep working. Add new fields in new
 | `photo_result` | a photo is reviewed | photo id | | dollars earned |
 | `photo_failed` | a photo couldn't be reviewed | photo id | message the player saw | |
 | `closed` | the round's live session closes | `ended` (round finished or stopped in the game) or `left` (page closed mid-round) | | seconds since the slot opened (Reactor time used) |
+| `stream_fps` | with `closed`, if live video played | as `closed` | | average frames per second the player saw. value2: % of seconds under 5 fps. value3: average fps over the first 15 seconds |
+| `slow_video` | the slow video notice shows or goes away | `started` or `ended` | | seconds of live video so far |
 
 `slot_opened`, `line_joined` and `turned_away` are recorded by the Worker in `/api/token`, not by the game, and `/api/event` refuses them (`SERVER_EVENT_TYPES` in `events.js`). The game sends its page session and run id with `/api/token` so they join the round's other events. Time spent waiting is the gap between `line_joined` and `slot_opened` for the same session, and a `line_joined` with no `slot_opened` after it is a player who gave up.
 
@@ -146,6 +151,7 @@ The link names are `header_profile`, `header_github`, `ticker_hire_me`, `ticker_
 
 **To track something new**, add its type to `EVENT_TYPES` in `worker/src/events.js`, call `track()` (or `city.record()` inside a round, which adds the run id), and add a row to the table above. For a new link, add `data-track="<name>"` to the `<a>`; nothing else is needed. The Worker refuses unknown types, so a new type only records after the Worker is deployed.
 
+- **Frame rate** is counted from the frames the page shows (`requestVideoFrameCallback`, `orbis-motion-test/newsworthy-fps.js`), once a second while the tab is visible. It measures what reached the player, not what Reactor generated: on 2026-09-27 the stream from Singapore ran at 2–3 fps while Reactor's own recording of the same sessions ran at 18. The game shows a "slow video" notice after 5 seconds in a row under 5 fps and hides it after 5 seconds in a row at 8 fps or more.
 - **Unique players:** blob4 is the first 16 hex characters of an HMAC-SHA256 of the player's IP, keyed with `PLAYER_SALT`, so it's the same for one IP across rounds and days but the IP can't be recovered from it. People sharing a network count as one player, and one person on two networks counts as two. Changing `PLAYER_SALT` gives everyone new ids.
 - **Rows from before 2026-09-25** came from the old `/api/save`: index1 was the run id, blob2 the command, blob3 the error and double1 the ms, as now, but blob4 to blob6 are empty and there is no `page_opened` or `link_clicked`.
 - **Analytics Engine samples rows**, so plain counts undercount. Each row's `_sample_interval` says how many events it stands for: use `sum(_sample_interval)` for totals, and don't expect a complete timeline for one round. For an exact record of one round, use Workers Logs or `wrangler tail`.

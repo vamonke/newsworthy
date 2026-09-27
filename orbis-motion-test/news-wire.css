@@ -206,6 +206,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .on-air { top: 14px; left: 14px; display: flex; align-items: stretch; gap: 0; box-shadow: none; }
 .on-air b { padding: 10px 13px; color: white; background: var(--wire-red); font: 900 17px/1 'Barlow Condensed',Impact,sans-serif; }
 .on-air > span { display: flex; align-items: center; padding: 0 16px; white-space: nowrap; color: white; background: rgba(11,18,18,.88); font: 700 13px/1 monospace; letter-spacing: .5px; }
+/* Shown while the live video arrives under 5 fps; see newsworthy-fps.js. */
+.on-air .slow-tag { display: flex; align-items: center; padding: 0 12px; color: #111; background: #ffda57; font: 800 16px/1 Barlow,Arial,sans-serif; letter-spacing: .3px; white-space: nowrap; }
+.on-air:has(.slow-tag:not([hidden])) { grid-template-columns: auto auto auto; }
+@media (max-width: 600px) { .on-air .slow-tag { font-size: 11px; padding: 0 7px; } }
 .stats { top: 14px; right: 14px; display: flex; color: white; background: rgba(11,18,18,.9); border: 0; border-bottom: 3px solid var(--wire-red); box-shadow: none; }
 .stats > div { padding: 7px 12px; }
 .stats > div:first-child { color: white; background: transparent; }

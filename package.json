@@ -7,7 +7,7 @@
     "build": "vite build",
     "dev:newsworthy": "vite --config orbis-motion-test/newsworthy.vite.config.js",
     "build:newsworthy": "vite build --config orbis-motion-test/newsworthy.vite.config.js",
-    "test:newsworthy": "node --test orbis-motion-test/newsworthy-crop.test.js orbis-motion-test/news-judge.test.js"
+    "test:newsworthy": "node --test orbis-motion-test/newsworthy-crop.test.js orbis-motion-test/news-judge.test.js orbis-motion-test/newsworthy-fps.test.js"
   },
   "dependencies": {
     "@reactor-team/js-sdk": "^3.0.2"
