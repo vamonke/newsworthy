@@ -4,7 +4,7 @@ Why Newsworthy records what it does, what we know so far, and how to pull the nu
 
 ## Why
 
-Every round uses Reactor credits, roughly $1–2 a round. As of 2026-09-25 about $80 of credits were left. When they run low, Varick will ask Reactor (or another sponsor) for more. The pitch is: "your credits put your model in front of this many people, and this many of them went on to look at Reactor and Visko Orbis." The analytics exist to back that up with numbers.
+Every round uses Reactor credits, roughly $1–2 a round. On 2026-09-28 $30.15 of credits were left (see "Reactor credits" below for the live figure). When they run low, Varick will ask Reactor (or another sponsor) for more. The pitch is: "your credits put your model in front of this many people, and this many of them went on to look at Reactor and Visko Orbis." The analytics exist to back that up with numbers.
 
 The numbers a sponsor cares about:
 
@@ -14,7 +14,7 @@ The numbers a sponsor cares about:
 | How much of our model did they use? | Reactor minutes (`closed` value) |
 | Did they check us out? | `link_clicked` on the Reactor and Visko Orbis links, plus UTM visits in Reactor's own analytics |
 | Is there more demand than credits? | `line_joined`, `turned_away` |
-| What does each player cost us? | credits spent ÷ unique players |
+| What does each player cost us? | credits spent (Reactor's account API, below) ÷ unique players |
 | Where are they from? | Cloudflare traffic by country |
 
 ## What's tracked, and since when
@@ -42,7 +42,7 @@ Before player ids existed. Includes Varick's and agents' test rounds, which can'
 - **Rounds:** 87 started, 66 got live video, 65 took at least one photo, 12 used all 12 shots.
 - **Photos:** 481 taken and reviewed by AI, 7.4 per round that took any. 158 scenes triggered.
 - **Live video:** a typical round ran about 2 minutes; about 117 minutes in total.
-- **Estimated credit spend:** at $1–2 a round, about $66–130 for the 66 rounds with video. Check Reactor's dashboard for the real figure.
+- **Credit spend:** Reactor recorded 88 sessions from 2026-09-24 to 2026-09-25 13:55, about $82 (140 minutes of session time). Before launch, testing used about $215.
 
 ## Pitch queries
 
@@ -71,6 +71,20 @@ X="blob4 != 'bdf0edb99a002e95'"
 | Photos and earnings | `q "SELECT sum(_sample_interval) AS photos, sum(double1 * _sample_interval) AS dollars FROM newsworthy_events WHERE blob1 = 'photo_result' AND blob4 != '' AND $X"` |
 | Scenes picked | `q "SELECT blob2 AS scene, sum(_sample_interval) AS n FROM newsworthy_events WHERE blob1 = 'incident_clicked' AND blob2 != '' AND $X GROUP BY scene ORDER BY n DESC"` |
 
+## Reactor credits
+
+The real balance and every session come from Reactor's account API. Reactor's docs say usage endpoints are "coming soon", but the dashboard's own endpoints already accept the API key. They aren't documented, so they may change.
+
+```bash
+RK=$(grep -h REACTOR_API_KEY worker/.dev.vars | cut -d= -f2- | tr -d '"')
+A=$(curl -s https://api.reactor.inc/me -H "Reactor-API-Key: $RK" | jq -r .account_id)
+curl -s "https://api.reactor.inc/accounts/$A/credits" -H "Reactor-API-Key: $RK" | jq -r .balance_usd
+curl -s "https://api.reactor.inc/accounts/$A/sessions?limit=100" -H "Reactor-API-Key: $RK" > /tmp/rs.json   # newest first; page with &cursor=<next_cursor>
+jq -r '.sessions | group_by(.created_at[0:10]) | .[] | "\(.[0].created_at[0:10])  \(length) sessions  \(map((.updated_at[0:19]+"Z"|fromdate)-(.created_at[0:19]+"Z"|fromdate))|add) s"' /tmp/rs.json
+```
+
+Each session has `created_at`, `updated_at` (when it closed), `origin_country` and `closed`. Spend is session seconds × the `visko-orbis-stable` rate from `https://api.reactor.inc/pricing` ($0.0097/s). That slightly overstates it, since connecting and waiting aren't billed. The account is shared with local dev, agent playtests and `orbis-motion-test`, so these totals include test sessions. On 2026-09-27 Reactor had 19 sessions and production logged 4 rounds.
+
 Page loads and countries come from Cloudflare's GraphQL API for the zone `vamonke.com` (`3d98cf36bd545168c039055886ab863c`):
 
 ```bash
@@ -89,6 +103,7 @@ In Reactor's own analytics, our visits show up as `utm_source=newsworthy`, `utm_
 - **Salt:** `PLAYER_SALT` was generated at deploy and never saved. Leave it alone, since changing it makes everyone look new.
 - `closed` before 2026-09-25 ~14:43 is missing for players who left mid-round, so Reactor minutes before then undercount.
 - **`closed` before 2026-09-28 overcounts rounds.** Until then only one Reactor session could run at a time but the game gave out 4 slots, so starts made while someone else was live failed within 2 s and were still recorded as `closed` / `ended` with 0–2 seconds. Count real rounds as `closed` with `double1 > 5`, or use D1 `scores`. Those failures also mean `line_joined` and `turned_away` undercount demand before then (see DEPLOYMENT.md, "Lessons from launch").
+- **Don't estimate credits from `closed`.** It covers production rounds only. On 2026-09-28 an estimate from it said about $51 left when the real balance was $30.15. Use "Reactor credits" above.
 - Old rows (before 2026-09-25 ~13:55) have no player id, scene name or photo value.
 
 ## Ideas not built yet
