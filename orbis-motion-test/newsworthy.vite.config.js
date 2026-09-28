@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
   // Reactor ends the session itself at this limit; our cleanup timer is the backstop.
   const SESSION_SECONDS = 240;
   async function cleanup(id, jwt) {
+    if (!id) return; // a start that failed before Reactor gave it a session id; only production holds a slot for it
     const response = await fetch(`https://api.reactor.inc/sessions/${encodeURIComponent(id)}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${jwt}` }, signal: AbortSignal.timeout(15000),
     });

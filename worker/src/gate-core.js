@@ -1,5 +1,6 @@
 // Live-session slot bookkeeping, kept free of I/O so it can be unit tested.
-// Reactor allows 5 sessions at once per account; 4 slots leave one free for testing.
+// Production sets the slot count with LIVE_SLOTS (wrangler.jsonc) to Reactor's per-model session limit;
+// these defaults are what the unit tests run with.
 export const LIMITS = {
   slots: 4,
   perIp: 2,
@@ -125,6 +126,10 @@ export function alive(state, jwt, now) {
   if (!hit) return false;
   hit[1].alive = now;
   return true;
+}
+
+export function holder(state, jwt) {
+  return byJwt(state, jwt)?.[1] ?? null;
 }
 
 export function release(state, jwt) {

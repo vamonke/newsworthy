@@ -14,6 +14,11 @@ test('outside a round the session is the index', () => {
   assert.deepEqual(point.doubles, [0, 0, 0]);
 });
 
+test('a failed start is accepted with its message', () => {
+  const point = toDataPoint({ type: 'start_failed', session: 's', run: 'newsworthy-1', detail: 'quota_exceeded' }, 'p1');
+  assert.deepEqual(point.blobs.slice(0, 3), ['start_failed', '', 'quota_exceeded']);
+});
+
 test('unknown types, bad ids and bad fields are refused or cleaned', () => {
   assert.equal(toDataPoint({ type: 'anything', session: 's' }, ''), null);
   assert.equal(toDataPoint({ type: 'closed' }, ''), null);

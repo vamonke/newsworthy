@@ -28,6 +28,7 @@ All game events go to the Analytics Engine dataset `newsworthy_events` on the Cl
 | 2026-09-25 ~14:23 | UTM tags on the Reactor links, `slot_opened`, `line_joined`, `turned_away`, Reactor seconds per round on `closed`, loading seconds on `first_video_frame`. |
 | 2026-09-25 ~14:43 | `closed` also recorded when a player leaves mid-round (label `left`; normal ends are `ended`). |
 | 2026-09-27 | Country on every event (blob7). `stream_fps` per round (frame rate the player saw) and `slow_video` when the slow video notice shows or goes away. |
+| 2026-09-28 | `start_failed` with the error when a round can't start. `closed` only for rounds that opened a Reactor session, with the new label `failed`. |
 
 Since 2026-09-26 every scored round is also a row in the D1 table `scores` (database `newsworthy`: round, player id, total, sold photos), and since 2026-09-25 every judged photo is kept in the R2 bucket `newsworthy-photos`. Both are described in DEPLOYMENT.md, "Leaderboard and saved photos". For totals per round, query D1 instead of adding up `photo_result` rows: D1 isn't sampled. For example, `npx wrangler d1 execute newsworthy --remote --command "SELECT COUNT(*), MAX(total) FROM scores WHERE player != 'bdf0edb99a002e95'"`.
 
@@ -87,6 +88,7 @@ In Reactor's own analytics, our visits show up as `utm_source=newsworthy`, `utm_
 - **Unique players are unique networks.** An office or campus counts as one; one person on Wi-Fi and then mobile data counts as two.
 - **Salt:** `PLAYER_SALT` was generated at deploy and never saved. Leave it alone, since changing it makes everyone look new.
 - `closed` before 2026-09-25 ~14:43 is missing for players who left mid-round, so Reactor minutes before then undercount.
+- **`closed` before 2026-09-28 overcounts rounds.** Until then only one Reactor session could run at a time but the game gave out 4 slots, so starts made while someone else was live failed within 2 s and were still recorded as `closed` / `ended` with 0–2 seconds. Count real rounds as `closed` with `double1 > 5`, or use D1 `scores`. Those failures also mean `line_joined` and `turned_away` undercount demand before then (see DEPLOYMENT.md, "Lessons from launch").
 - Old rows (before 2026-09-25 ~13:55) have no player id, scene name or photo value.
 
 ## Ideas not built yet
@@ -98,5 +100,6 @@ In Reactor's own analytics, our visits show up as `utm_source=newsworthy`, `utm_
 
 ## Log
 
+- **2026-09-28:** 16 new players by 12:00 UTC, the busiest day since launch (14 played, 20 scored rounds, about $25 of Reactor time). Found that 19 of 40 starts had failed because Reactor allows one session per model; set `LIVE_SLOTS` to 1 so players wait in line instead, and added `start_failed`.
 - **2026-09-26:** added the leaderboard. Every scored round is now a row in D1 `scores`, and every judged photo is kept in R2 (since 2026-09-25). First posted rounds: $5,502 (a player) and $6,188 (a test round, kept on the board).
 - **2026-09-25:** checked the first numbers (above). Added player ids, `/api/event`, link tracking, slot demand, Reactor time and UTM tags; deployed three times. Each deploy was play-tested in production: rounds started, got live video, took a photo that sold for $1,000, and closed; events arrived with the new columns. Found and fixed `closed` missing when a player leaves mid-round.

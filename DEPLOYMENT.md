@@ -29,7 +29,7 @@ Reactor (live video) and Gemini (photo judge) are the only services outside Clou
 | Piece | File | What it does |
 |---|---|---|
 | Router | `worker/src/index.js` | Serves the game, handles `/api/*`, checks the origin, rate limits (6 new rounds a minute and 240 API calls a minute per address) and Turnstile. `/api/news-round` needs the live-session token from `/api/token` and opens one round per token, so the photo judge sits behind the same Turnstile check. `/` serves `news-design.html`. |
-| Gate | `worker/src/gate.js`, logic in `gate-core.js` | 4 live slots and a first-come-first-served line. Each address can hold 2 places. A waiting ticket expires after 15 s without a check-in. A token that never starts a session loses its slot after 90 s. A session keeps its slot for 240 s + 15 s, then the Gate's alarm ends it with Reactor. While it holds a slot the game checks in every 10 s (`/api/alive`); a slot whose check-ins stop for 40 s is ended, because browsers don't send the goodbye cleanup when a tab is destroyed. There's a cap of 500 sessions a day. "Stop previous session" ends only the caller's own sessions. |
+| Gate | `worker/src/gate.js`, logic in `gate-core.js` | One live slot (`LIVE_SLOTS`, set to Reactor's per-model limit) and a first-come-first-served line. Each address can hold 2 places. A waiting ticket expires after 15 s without a check-in. A token that never starts a session loses its slot after 90 s, and a game whose start fails frees it at once. When a round ends, the slot is held until Reactor confirms the session is gone, so the next player isn't refused by Reactor's limit. A session keeps its slot for 240 s + 15 s, then the Gate's alarm ends it with Reactor. While it holds a slot the game checks in every 10 s (`/api/alive`); a slot whose check-ins stop for 40 s is ended, because browsers don't send the goodbye cleanup when a tab is destroyed. There's a cap of 500 sessions a day. "Stop previous session" ends only the caller's own sessions. |
 | Round | `worker/src/round.js` | Runs `createNewsJudge` from `orbis-motion-test/news-judge-api.js` for one round and saves after every photo (`snapshot`/`restore`), because idle Durable Objects are dropped from memory. After each photo it writes the photo to R2 and the round's score to D1. An hour after the round starts it copies itself to R2; nothing is deleted. |
 | Leaderboard | `worker/src/leaderboard.js`, schema in `worker/migrations/` | See "Leaderboard and saved photos". |
 | Reactor client | `worker/src/reactor.js` | Mints tokens with `max_sessions: 1` and `max_session_duration_seconds: 240`, and deletes sessions. |
@@ -40,7 +40,15 @@ The local Vite dev server (`orbis-motion-test/newsworthy.vite.config.js`) still 
 
 ## Limits that drive the design
 
-- **Reactor:** 5 concurrent sessions per account, shared by every key, and 10 new sessions a minute (3 back-to-back, then about 1 every 6 s). Going over returns 429. Source: https://docs.reactor.inc/resources/rate-limits. We use 4 slots so one is left for testing. To raise the limit, email support@reactor.inc, then change `LIVE_SLOTS`.
+- **Reactor:** **1 concurrent session per model** (`concurrent_sessions_per_model` for `visko-orbis-stable`), 5 per account, and 10 new sessions a minute (3 back-to-back, then about 1 every 6 s). Rate limits return 429. The per-model limit isn't in Reactor's docs (https://docs.reactor.inc/resources/rate-limits only lists the 5); read the account's real quotas with:
+
+  ```bash
+  RK=$(grep -h REACTOR_API_KEY worker/.dev.vars | cut -d= -f2- | tr -d '"')
+  A=$(curl -s https://api.reactor.inc/me -H "Reactor-API-Key: $RK" | jq -r .account_id)
+  curl -s "https://api.reactor.inc/accounts/$A/quotas" -H "Reactor-API-Key: $RK"   # model ids: https://api.reactor.inc/models
+  ```
+
+  `LIVE_SLOTS` must not be higher than the per-model limit. A second player's session is refused with `quota_exceeded`/`concurrent_sessions_per_model` before it starts, so extra slots only turn waiting in line into failed starts. There's no spare slot for testing: a test round takes the players' only slot. To raise the limit, email support@reactor.inc, check the quotas above, then change `LIVE_SLOTS`.
 - **Rounds:** each round opens its own Reactor session and closes it at the end, so the 4-minute cap applies to a single round (up to 2 min loading plus the 2-minute round).
 - **Workers Static Assets:** 25 MiB per file.
 
@@ -139,7 +147,8 @@ Columns never change meaning, so old queries keep working. Add new fields in new
 | `photo_captured` | a photo is taken | photo id | | |
 | `photo_result` | a photo is reviewed | photo id | | dollars earned |
 | `photo_failed` | a photo couldn't be reviewed | photo id | message the player saw | |
-| `closed` | the round's live session closes | `ended` (round finished or stopped in the game) or `left` (page closed mid-round) | | seconds since the slot opened (Reactor time used) |
+| `start_failed` | a round couldn't start (from 2026-09-28) | | the error, e.g. Reactor's `quota_exceeded` | |
+| `closed` | the round's live session closes; only rounds that opened a Reactor session (from 2026-09-28) | `ended` (round finished or stopped in the game), `left` (page closed mid-round) or `failed` (the start failed after the session opened) | | seconds since the slot opened (Reactor time used) |
 | `stream_fps` | with `closed`, if live video played | as `closed` | | average frames per second the player saw. value2: % of seconds under 5 fps. value3: average fps over the first 15 seconds |
 | `slow_video` | the slow video notice shows or goes away | `started` or `ended` | | seconds of live video so far |
 
@@ -179,7 +188,7 @@ Turnstile blocks automated browsers (error 600010), so an agent can't pass it. U
 1. Read `TURNSTILE_BYPASS` from `worker/.dev.vars`. Git ignores that file, and the same value is set on the Worker.
 2. Open `https://newsworthy.vamonke.com/?pass=<value>` in the browser pane. The tab keeps the pass and removes it from the address bar.
 3. Press **Start shooting**. The round skips Turnstile, and the Worker logs "Turnstile skipped with the secret pass". A How to play popup can appear over the live round; its button closes it. Pick a scene in the left panel, then click the video to take a photo.
-4. Every round uses real Reactor and Gemini time and takes one of the 4 live slots from players. Ask Varick before playing, and keep rounds short.
+4. Every round uses real Reactor and Gemini time and takes the only live slot, so players wait in line behind it. Ask Varick before playing, and keep rounds short.
    Rounds played this way are posted to the leaderboard like anyone else's, under Varick's network player id (`bdf0edb99a002e95`, shown as "Lively Yak 14"). Varick chose to keep them there.
 5. When done, close the tab. With the heartbeat the slot frees itself within about 40 s. The auto-mode permission check blocks calling `/api/stop-sessions` from curl, so don't count on that.
 
@@ -197,6 +206,7 @@ Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or
 - **Gemini refuses some locations, Hong Kong among them.** On 2026-09-24 every photo in one round failed with "Editor unavailable (400)", and Gemini's reply was "User location is not supported for the API use." A Round object calls Gemini from wherever Cloudflare created it, which is near where the player's request landed. Players in Singapore were served from Singapore, Hong Kong and even Madrid. Pinning every round to the US fixed it but made each photo 1.5–3 s slower from Singapore, mostly from carrying the photo across the Pacific. So rounds now stay near the player, and only when Gemini refuses the location does that round send its Gemini calls through `GeminiRelay` (`worker/src/relay.js`), one Durable Object created in western North America. Workers Logs show "Gemini refused this round's location…" and "Relayed a Gemini call from the US" when that happens. To test the relay locally, run `wrangler dev --var GEMINI_RELAY_ALWAYS:1`.
 - **Secrets reach every copy of the Worker a few seconds after a deploy.** Right after the first deploy, one `/api/token` request got through without Turnstile. It only happens on a first deploy; later deploys keep the existing secrets.
 - **Browsers pause animations in hidden or covered windows.** Photos used to wait for the shutter flash before being sent, so they stalled in background tabs. `shutter()` in `newsworthy-motion.js` now gives up after 300 ms.
+- **Reactor runs one session per model at a time, not five.** Until 2026-09-28 the Gate gave out 4 slots, so while one player was live the next got a slot, Reactor refused the session within 2 s, and the game retried every 10 s. Each failed try kept its slot for 90 s, so after two tries the player was told another session was still open. Nobody was ever put in line. On 2026-09-28, 19 of 40 starts failed this way. It was found by the pattern that no two Reactor sessions ever overlapped (`/accounts/<id>/sessions`) and confirmed with `/accounts/<id>/quotas`. Failed starts are now recorded as `start_failed`.
 - **Durable Objects are dropped from memory after about 70–140 s idle.** The stream can take up to 2 minutes to load before the first photo, so rounds must stay saved in storage.
 
 ## Leaderboard and saved photos

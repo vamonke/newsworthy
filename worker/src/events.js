@@ -8,7 +8,7 @@
 // Only these types are accepted from the game; anything else is refused, so junk can't reach the data.
 export const EVENT_TYPES = new Set([
   'page_opened', 'link_clicked',
-  'command_sent', 'command_ack', 'model_error', 'incident_clicked', 'first_video_frame', 'closed',
+  'command_sent', 'command_ack', 'model_error', 'incident_clicked', 'first_video_frame', 'closed', 'start_failed',
   'photo_captured', 'photo_result', 'photo_failed',
   'stream_fps', 'slow_video',
 ]);

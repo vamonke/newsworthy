@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, claimRound, alive, release, releaseIp, nextWake } from './src/gate-core.js';
+import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, claimRound, alive, holder, release, releaseIp, nextWake } from './src/gate-core.js';
 
 const open = (state, ip, now = 0) => { const r = reserve(state, ip, now); if (r.ticket) attach(state, r.ticket, `jwt-${r.ticket}`); return r; };
 const jwtOf = (r) => `jwt-${r.ticket}`;
@@ -43,6 +43,14 @@ test('unknown tokens and a second session id are refused', () => {
   assert.equal(register(s, 'forged', 'sess-1', 0), false);
   assert.equal(register(s, jwtOf(r), 'sess-1', 0), true);
   assert.equal(register(s, jwtOf(r), 'sess-2', 0), false);
+});
+
+test('holder finds a slot by its token without freeing it', () => {
+  const s = emptyState();
+  const mine = open(s, 'a');
+  assert.equal(holder(s, jwtOf(mine)).ip, 'a');
+  assert.equal(Object.keys(s.slots).length, 1);
+  assert.equal(holder(s, 'unknown'), null);
 });
 
 test('release frees the slot; stopping by address leaves other players alone', () => {
