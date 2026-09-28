@@ -67,8 +67,9 @@ dialog.np-howto.np:not(#_) { width: clamp(min(480px,90vw), 50vw, 760px); }
 .np-howto.np:not(#_) .np-rules span { font-size: clamp(13px,1.1vw,17px); }
 .np-howto.np:not(#_) .np-actions { margin-bottom: clamp(12px,1.4vw,22px); }
 /* The line under Start shooting (see showLine in newsworthy.js). */
-.np-howto.np:not(#_) .np-actions:has(+ .line-status:not([hidden])) { margin-bottom: 0; }
-.np:not(#_) .line-status { margin: clamp(10px,1vw,14px) 0 clamp(12px,1.4vw,22px); color: var(--wire-ink); font: 700 clamp(11px,1vw,14px)/1.3 var(--np-mono); letter-spacing: .14em; text-align: center; text-transform: uppercase; }
+.np-howto.np:not(#_) .np-actions:has(+ .line-status) { margin-bottom: 0; }
+/* Its line is kept while empty, so the popup doesn't grow when the status arrives. */
+.np:not(#_) .line-status { min-height: 1.3em; margin: clamp(10px,1vw,14px) 0 clamp(12px,1.4vw,22px); color: var(--wire-ink); font: 700 clamp(11px,1vw,14px)/1.3 var(--np-mono); letter-spacing: .14em; text-align: center; text-transform: uppercase; }
 .np:not(#_) .line-status.busy::before { content: '● '; color: var(--wire-red); }
 .np-howto.np:not(#_) .np-btn.xl { width: min(360px,100%); margin-top: 28px; font-size: clamp(32px,3vw,48px); }
 /* Both copies dim the game but don't blur it, matching the welcome's shade. */
