@@ -44,8 +44,9 @@ async function human(env, token, ip, pass) {
 async function api(request, env, path, ip) {
   const gate = env.GATE.get(env.GATE.idFromName('gate'));
   if (path === 'status' && request.method === 'GET') {
-    const { active, slots } = await gate.status();
-    return reply(200, { configured: Boolean(env.REACTOR_API_KEY), model: MODEL, activeSessions: active, slots, turnstile: env.TURNSTILE_SECRET ? env.TURNSTILE_SITE_KEY : null });
+    // waiting and wait (seconds) are shown under Start shooting, before the player joins the line.
+    const { active, slots, waiting, wait } = await gate.status();
+    return reply(200, { configured: Boolean(env.REACTOR_API_KEY), model: MODEL, activeSessions: active, slots, waiting, wait, turnstile: env.TURNSTILE_SECRET ? env.TURNSTILE_SITE_KEY : null });
   }
   if (path === 'leaderboard' && request.method === 'GET') {
     if (env.API_LIMITER && !(await env.API_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many requests. Slow down a little.' });

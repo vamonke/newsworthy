@@ -85,6 +85,12 @@ export function estimateWait(state, i, now, limits = LIMITS) {
   return Math.round(wait / 1000);
 }
 
+// The line as someone who hasn't joined sees it: how many are waiting, and their wait if they join now.
+export function lineStatus(state, now, limits = LIMITS) {
+  const waiting = (state.line || []).filter((w) => w.lastSeen + limits.lineMs > now).length;
+  return { waiting, wait: estimateWait(state, waiting, now, limits) };
+}
+
 const waiting = (state, i, now, limits) => ({ error: 'busy', retryAfter: Math.ceil(limits.pollMs / 1000), queue: { ticket: state.line[i].ticket, position: i + 1, ahead: i, wait: estimateWait(state, i, now, limits) } });
 
 // First come, first served. With no ticket the player gets a slot only if nobody is waiting,

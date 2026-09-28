@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, claimRound, alive, holder, release, releaseIp, nextWake, timeRound, estimateWait } from './src/gate-core.js';
+import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, claimRound, alive, holder, release, releaseIp, nextWake, timeRound, estimateWait, lineStatus } from './src/gate-core.js';
 
 const open = (state, ip, now = 0) => { const r = reserve(state, ip, now); if (r.ticket) attach(state, r.ticket, `jwt-${r.ticket}`); return r; };
 const jwtOf = (r) => `jwt-${r.ticket}`;
@@ -224,4 +224,15 @@ test('with several slots, the line spreads across whichever frees up first', () 
   assert.equal(admit(s, 'c', null, 100_000, two).queue.wait, 50);
   assert.equal(admit(s, 'd', null, 100_000, two).queue.wait, 150);
   assert.equal(admit(s, 'e', null, 100_000, two).queue.wait, 200);
+});
+
+test('before joining, a player sees how many are waiting and the wait if they join now', () => {
+  const s = emptyState();
+  assert.deepEqual(lineStatus(s, 0, one), { waiting: 0, wait: 0 });
+  assert.ok(admit(s, 'a', null, 0, one).ticket);
+  assert.deepEqual(lineStatus(s, 60_000, one), { waiting: 0, wait: 90 });
+  admit(s, 'b', null, 60_000, one);
+  assert.deepEqual(lineStatus(s, 60_000, one), { waiting: 1, wait: 240 });
+  // Someone who stopped checking in no longer counts.
+  assert.equal(lineStatus(s, 60_000 + LIMITS.lineMs, one).waiting, 0);
 });
