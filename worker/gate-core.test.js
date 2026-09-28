@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, claimRound, alive, holder, release, releaseIp, nextWake } from './src/gate-core.js';
+import { LIMITS, emptyState, sweep, sweepLine, reserve, admit, attach, register, claimRound, alive, holder, release, releaseIp, nextWake, timeRound, estimateWait } from './src/gate-core.js';
 
 const open = (state, ip, now = 0) => { const r = reserve(state, ip, now); if (r.ticket) attach(state, r.ticket, `jwt-${r.ticket}`); return r; };
 const jwtOf = (r) => `jwt-${r.ticket}`;
@@ -83,7 +83,7 @@ test('when every slot is taken, players join the line in order and see their pla
   assert.equal(e.position, 1); assert.equal(e.ahead, 0);
   assert.equal(f.position, 2); assert.equal(f.ahead, 1);
   assert.notEqual(e.ticket, f.ticket);
-  assert.deepEqual(admit(s, 'f', f.ticket, 1_000).queue, { ticket: f.ticket, position: 2, ahead: 1 });
+  assert.deepEqual(admit(s, 'f', f.ticket, 1_000).queue, { ticket: f.ticket, position: 2, ahead: 1, wait: 149 });
 });
 
 test('a freed slot goes to the front of the line, not to a newcomer or someone further back', () => {
@@ -96,7 +96,7 @@ test('a freed slot goes to the front of the line, not to a newcomer or someone f
   const turn = admit(s, 'e', e.ticket, 1_000);
   assert.ok(turn.ticket);
   assert.equal(s.slots[turn.ticket].ip, 'e');
-  assert.deepEqual(admit(s, 'f', f.ticket, 2_000).queue, { ticket: f.ticket, position: 1, ahead: 0 });
+  assert.deepEqual(admit(s, 'f', f.ticket, 2_000).queue, { ticket: f.ticket, position: 1, ahead: 0, wait: 148 });
 });
 
 test('two free slots let the first two in line through', () => {
@@ -191,4 +191,37 @@ test('checking in never stretches a session past its 4 minutes', () => {
   alive(s, jwtOf(r), end - 1_000);
   assert.equal(nextWake(s), end);
   assert.equal(sweep(s, end).length, 1);
+});
+
+// Wait estimate.
+const one = { ...LIMITS, slots: 1 };
+
+test('with one slot, the wait is the rest of the current round plus a round per player ahead', () => {
+  const s = emptyState();
+  assert.ok(admit(s, 'a', null, 0, one).ticket);
+  assert.equal(admit(s, 'b', null, 60_000, one).queue.wait, 90);
+  assert.equal(admit(s, 'c', null, 60_000, one).queue.wait, 240);
+  // A round running past the usual time means any moment now, not a negative wait.
+  assert.equal(estimateWait(s, 0, 400_000, one), 0);
+});
+
+test('the wait follows how long recent rounds really took', () => {
+  const s = emptyState();
+  for (const ms of [100_000, 120_000]) timeRound(s, { sessionId: 'x', since: 0 }, ms, one);
+  timeRound(s, { sessionId: null, since: 0 }, 5_000, one); // a start that never reached Reactor isn't a round
+  assert.deepEqual(s.rounds, [100_000, 120_000]);
+  assert.ok(admit(s, 'a', null, 0, one).ticket);
+  assert.equal(admit(s, 'b', null, 0, one).queue.wait, 110);
+  for (let i = 0; i < 20; i++) timeRound(s, { sessionId: 'x', since: 0 }, 60_000, one);
+  assert.equal(s.rounds.length, LIMITS.timedRounds);
+});
+
+test('with several slots, the line spreads across whichever frees up first', () => {
+  const s = emptyState();
+  const two = { ...LIMITS, slots: 2 };
+  assert.ok(admit(s, 'a', null, 0, two).ticket);
+  assert.ok(admit(s, 'b', null, 100_000, two).ticket);
+  assert.equal(admit(s, 'c', null, 100_000, two).queue.wait, 50);
+  assert.equal(admit(s, 'd', null, 100_000, two).queue.wait, 150);
+  assert.equal(admit(s, 'e', null, 100_000, two).queue.wait, 200);
 });

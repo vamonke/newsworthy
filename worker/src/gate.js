@@ -1,5 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
-import { LIMITS, emptyState, sweep, sweepLine, admit, attach, register, claimRound, alive, holder, release, releaseIp, nextWake } from './gate-core.js';
+import { LIMITS, emptyState, sweep, sweepLine, admit, attach, register, claimRound, alive, holder, release, timeRound, releaseIp, nextWake } from './gate-core.js';
 import { mintToken, endSession } from './reactor.js';
 
 // One instance for the whole game: it decides who gets one of the live slots.
@@ -21,7 +21,9 @@ export class Gate extends DurableObject {
     if (wake) await this.ctx.storage.setAlarm(wake); else await this.ctx.storage.deleteAlarm();
   }
 
+  // Slots that have just ended: times their rounds for the wait estimate and ends their Reactor sessions.
   end(slots) {
+    for (const slot of slots) timeRound(this.state, slot, Date.now(), this.limits);
     const live = slots.filter((s) => s.sessionId && s.jwt);
     if (live.length) this.ctx.waitUntil(Promise.allSettled(live.map((s) => endSession(s.sessionId, s.jwt))));
   }
@@ -70,14 +72,14 @@ export class Gate extends DurableObject {
     // Hold the slot until Reactor has ended the session, so the next player isn't let in while
     // Reactor still counts it against the per-model limit.
     const id = slot.sessionId || sessionId;
-    try { if (id) await endSession(id, jwt); } finally { release(this.state, jwt); await this.save(); }
+    try { if (id) await endSession(id, jwt); } finally { release(this.state, jwt); timeRound(this.state, slot, Date.now(), this.limits); await this.save(); }
     return true;
   }
 
   async stopIp(ip) {
     const freed = releaseIp(this.state, ip);
-    await this.save();
     this.end(freed);
+    await this.save();
     return freed.length;
   }
 

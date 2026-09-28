@@ -12,9 +12,11 @@ export const LIMITS = {
   lineMax: 100,
   pollMs: 3_000, // how often a waiting player checks in
   aliveMs: 40_000, // a game that has checked in and then goes quiet this long has left (the game checks in every 10 s)
+  roundMs: 150_000, // how long a player usually holds a slot, until real rounds have been timed
+  timedRounds: 10, // the wait estimate averages this many recent rounds
 };
 
-export const emptyState = () => ({ slots: {}, line: [], day: '', opened: 0 });
+export const emptyState = () => ({ slots: {}, line: [], day: '', opened: 0, rounds: [] });
 
 // When a slot ends: its time is up, or its game checked in and then went quiet (the tab closed or
 // crashed without saying goodbye). Slots that never checked in keep the old timing.
@@ -36,7 +38,7 @@ function newDay(state, now) {
 
 function take(state, ip, now, limits) {
   const ticket = crypto.randomUUID();
-  state.slots[ticket] = { ip, jwt: null, sessionId: null, until: now + limits.holdMs };
+  state.slots[ticket] = { ip, jwt: null, sessionId: null, until: now + limits.holdMs, since: now };
   state.opened++;
   return { ticket };
 }
@@ -61,7 +63,29 @@ export function sweepLine(state, now, limits = LIMITS) {
   state.line = (state.line || []).filter((w) => w.lastSeen + limits.lineMs > now);
 }
 
-const waiting = (state, i, limits) => ({ error: 'busy', retryAfter: Math.ceil(limits.pollMs / 1000), queue: { ticket: state.line[i].ticket, position: i + 1, ahead: i } });
+// Times a slot that held a real round (one that reached Reactor), for the wait estimate.
+export function timeRound(state, slot, now, limits = LIMITS) {
+  if (!slot?.sessionId || slot.since == null) return;
+  state.rounds = [...(state.rounds || []), now - slot.since].slice(-limits.timedRounds);
+}
+
+// Seconds until the player at this place in line (0 = front) gets a slot: each slot frees up when its
+// round has run for the usual time, and each player ahead then takes one for the usual time.
+export function estimateWait(state, i, now, limits = LIMITS) {
+  const rounds = state.rounds || [];
+  const usual = rounds.length ? rounds.reduce((a, b) => a + b, 0) / rounds.length : limits.roundMs;
+  const free = Object.values(state.slots).map((s) => Math.max(0, (s.since ?? now) + usual - now));
+  while (free.length < limits.slots) free.push(0);
+  let wait = 0;
+  for (let k = 0; k <= i; k++) {
+    free.sort((a, b) => a - b);
+    wait = free.shift();
+    free.push(wait + usual);
+  }
+  return Math.round(wait / 1000);
+}
+
+const waiting = (state, i, now, limits) => ({ error: 'busy', retryAfter: Math.ceil(limits.pollMs / 1000), queue: { ticket: state.line[i].ticket, position: i + 1, ahead: i, wait: estimateWait(state, i, now, limits) } });
 
 // First come, first served. With no ticket the player gets a slot only if nobody is waiting,
 // otherwise joins the end of the line. With a ticket the player gets a slot once the number of
@@ -75,7 +99,7 @@ export function admit(state, ip, ticket, now, limits = LIMITS) {
     if (i < 0) return { error: 'expired' };
     const me = state.line[i];
     me.lastSeen = now;
-    if (i >= free) return waiting(state, i, limits);
+    if (i >= free) return waiting(state, i, now, limits);
     state.line.splice(i, 1);
     if (state.opened >= limits.dailyCap) return { error: 'daily' };
     if (held(state, me.ip) >= limits.perIp) return { error: 'ip' };
@@ -89,7 +113,7 @@ export function admit(state, ip, ticket, now, limits = LIMITS) {
   if (mine + queued >= limits.perIp) return { error: 'line' };
   if (state.line.length >= limits.lineMax) return { error: 'full' };
   state.line.push({ ticket: crypto.randomUUID(), ip, lastSeen: now });
-  return waiting(state, state.line.length - 1, limits);
+  return waiting(state, state.line.length - 1, now, limits);
 }
 
 export function attach(state, ticket, jwt) {
