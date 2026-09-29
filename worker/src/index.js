@@ -88,12 +88,13 @@ async function api(request, env, path, ip) {
     else if (result.queue && !ticket) await record(env, request, ip, { ...ids, type: 'line_joined', value: result.queue.position });
     else if (result.error === 'full' || result.error === 'daily') await record(env, request, ip, { ...ids, type: 'turned_away', label: result.error });
     if (result.jwt) return reply(200, { jwt: result.jwt });
+    // `code` lets the game show its own title and note for each case (newsworthy.js, CANT_START).
     // This wording keeps the game's "stop the previous session" button working.
-    if (result.error === 'ip') return reply(409, { error: 'Another live session is still open. Stop it before starting another.' });
-    if (result.error === 'daily') return reply(503, { error: 'Newsworthy has reached today’s limit. Come back tomorrow.' });
-    if (result.error === 'line') return reply(429, { error: 'You’re already waiting in line in another tab.' });
-    if (result.error === 'expired') return reply(410, { error: 'You lost your place in line. Try again.' });
-    if (result.error === 'full') return reply(503, { error: 'Lots of people are playing right now. Try again in a few minutes.' }, { 'Retry-After': '60' });
+    if (result.error === 'ip') return reply(409, { error: 'Another live session is still open. Stop it before starting another.', code: 'ip' });
+    if (result.error === 'daily') return reply(503, { error: 'Newsworthy has reached today’s limit. Come back tomorrow.', code: 'daily' });
+    if (result.error === 'line') return reply(429, { error: 'You’re already waiting in line in another tab.', code: 'line' });
+    if (result.error === 'expired') return reply(410, { error: 'You lost your place in line. Try again.', code: 'expired' });
+    if (result.error === 'full') return reply(503, { error: 'The line is full. Try again in a few minutes.', code: 'full' }, { 'Retry-After': '60' });
     // Busy: the player is in line. The game shows their place and checks in again with the ticket.
     return reply(503, { error: 'All live cameras are in use. You’re in line.', queue: result.queue }, { 'Retry-After': String(result.retryAfter) });
   }

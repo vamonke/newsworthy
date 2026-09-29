@@ -22,7 +22,7 @@ export function playLoading(root){
  const card=document.createElement('div');card.className='load-card';
  card.innerHTML='<strong>Loading live feed</strong><span class="load-bar" aria-hidden="true"><i></i></span><small></small>';
  root.querySelector('#connection-title').before(card);
- const bar=card.querySelector('.load-bar i'),note=card.querySelector('small'),t0=performance.now();
+ const title=card.querySelector('strong'),bar=card.querySelector('.load-bar i'),note=card.querySelector('small');let t0=performance.now();
  const ctx=canvas.getContext('2d'),frames=noiseFrames(ctx),still=matchMedia('(prefers-reduced-motion: reduce)').matches;let f=0;ctx.putImageData(frames[0],0,0);
  const noise=still?0:setInterval(()=>ctx.putImageData(frames[++f%NOISE_FRAMES],0,0),1000/NOISE_FPS);
  root.classList.remove('intro','intro-hold');root.classList.add('tuning');root.hidden=false;
@@ -32,9 +32,13 @@ export function playLoading(root){
  showTip();let tips=setInterval(showTip,TIP_MS);
  // A wait message (slow start, queue) replaces the tips so the player sees why it's taking a while.
  const hold=text=>{clearInterval(tips);note.textContent=text;};
- const slow=setTimeout(()=>hold('Taking a bit longer than usual.'),SLOW_MS);
+ const slowly=()=>setTimeout(()=>hold('Taking a bit longer than usual.'),SLOW_MS);let slow=slowly();
+ // In line nothing is loading yet, so the card shows the player's place and wait, without the bar.
+ function line(place,text){clearTimeout(slow);card.classList.add('in-line');title.textContent=place;hold(text);}
+ // Their turn: back to loading, with the bar and the slow-start message timed from now.
+ function turn(text){clearTimeout(slow);bar.style.width='0';t0=performance.now();card.classList.remove('in-line');title.textContent='Loading live feed';hold(text);slow=slowly();}
  function stop(){clearInterval(timer);clearInterval(tips);clearInterval(noise);clearTimeout(slow);root.classList.remove('tuning');card.remove();canvas.remove();}
  // The first seconds of a round matter, so the screen goes away the instant video is ready.
  function live(){stop();root.hidden=true;}
- return {live,stop,note:hold};
+ return {live,stop,note:hold,line,turn};
 }
