@@ -18,12 +18,15 @@
       { "name": "GATE", "class_name": "Gate" },
       { "name": "ROUND", "class_name": "Round" },
       // Forwards Gemini calls from the US for rounds whose location Gemini refuses (src/relay.js).
-      { "name": "GEMINI_RELAY", "class_name": "GeminiRelay" }
+      { "name": "GEMINI_RELAY", "class_name": "GeminiRelay" },
+      // Watches photo scoring, live video and Reactor, and sends alerts (src/monitor.js).
+      { "name": "MONITOR", "class_name": "Monitor" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Gate", "Round"] },
-    { "tag": "v2", "new_sqlite_classes": ["GeminiRelay"] }
+    { "tag": "v2", "new_sqlite_classes": ["GeminiRelay"] },
+    { "tag": "v3", "new_sqlite_classes": ["Monitor"] }
   ],
   "ratelimits": [
     { "name": "TOKEN_LIMITER", "namespace_id": "4201", "simple": { "limit": 6, "period": 60 } },
@@ -33,10 +36,14 @@
   "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "newsworthy-photos" }],
   // Leaderboard scores (src/leaderboard.js). Schema: migrations/, applied with `wrangler d1 migrations apply newsworthy --remote`.
   "d1_databases": [{ "binding": "SCORES", "database_name": "newsworthy", "database_id": "27d9cdc4-746a-4235-97e6-28b5d86a0138" }],
+  // Checks photo scoring every 15 min, and the relay and Reactor hourly (src/monitor.js, DEPLOYMENT.md "Alerts").
+  "triggers": { "crons": ["*/15 * * * *"] },
+  // Alert emails through Email Routing on vamonke.com. Secret ALERT_EMAIL_TO must be a verified destination address.
+  "send_email": [{ "name": "ALERT_EMAIL" }],
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "newsworthy_events" }],
-  // Secrets (wrangler secret put): REACTOR_API_KEY, GEMINI_API_KEY, TURNSTILE_SECRET.
+  // Secrets (wrangler secret put): REACTOR_API_KEY, GEMINI_API_KEY, TURNSTILE_SECRET, and for alerts TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ALERT_EMAIL_TO.
   // The Turnstile widget "Newsworthy" allows newsworthy.vamonke.com, newsworthy.vamonke.workers.dev and localhost.
   // LIVE_SLOTS must not exceed Reactor's concurrent_sessions_per_model quota for the model (1 for visko-orbis-stable); see DEPLOYMENT.md.
-  "vars": { "LIVE_SLOTS": "1", "SLOTS_PER_IP": "2", "DAILY_SESSION_CAP": "500", "TURNSTILE_SITE_KEY": "0x4AAAAAAFBfBHrEmQgwHW5g" },
+  "vars": { "LIVE_SLOTS": "1", "SLOTS_PER_IP": "2", "DAILY_SESSION_CAP": "500", "TURNSTILE_SITE_KEY": "0x4AAAAAAFBfBHrEmQgwHW5g", "ALERT_EMAIL_FROM": "alerts@vamonke.com" },
   "observability": { "enabled": true }
 }

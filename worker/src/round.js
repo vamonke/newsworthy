@@ -2,6 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { createNewsJudge } from '../../orbis-motion-test/news-judge-api.js';
 import { withRelay } from './relay-core.js';
 import { relayStub } from './relay.js';
+import { report } from './monitor.js';
 import { nameFor, soldPhotos, countryCode, UPSERT } from './leaderboard.js';
 
 const KEEP_MS = 60 * 60 * 1000;
@@ -54,7 +55,14 @@ export class Round extends DurableObject {
 
   async judgePhoto(photo) {
     if (!this.id || photo?.roundId !== this.id) throw new Error('Round expired. Start a new round.');
-    const result = await this.judge.judge(photo);
+    let result;
+    try { result = await this.judge.judge(photo); }
+    catch (error) {
+      // The Monitor alerts when players' photo reviews keep failing (see monitor-core.js).
+      this.ctx.waitUntil(report(this.env, 'photo', { ok: false, message: error?.message || String(error), detail: error?.detail || '' }));
+      throw error;
+    }
+    this.ctx.waitUntil(report(this.env, 'photo', { ok: true }));
     await this.save();
     // Every judged photo is kept in R2 with its result. A failed write never costs the player the photo.
     const key = `rounds/${this.id}/${photo.photoId}`;

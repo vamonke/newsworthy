@@ -1,6 +1,7 @@
 import { Gate } from './gate.js';
 import { Round } from './round.js';
 import { GeminiRelay } from './relay.js';
+import { Monitor, report, health, scheduledChecks } from './monitor.js';
 import { MODEL } from './reactor.js';
 import { toDataPoint, playerId, SERVER_EVENT_TYPES } from './events.js';
 import { TOP, RANK, ROUND, BEST, toBoard, listsPhoto } from './leaderboard.js';
@@ -11,7 +12,10 @@ async function record(env, request, ip, event) {
   if (point) env.EVENTS?.writeDataPoint(point);
 }
 
-export { Gate, Round, GeminiRelay };
+export { Gate, Round, GeminiRelay, Monitor };
+
+// Round events the Monitor uses to tell whether live video starts.
+const VIDEO_EVENTS = new Set(['first_video_frame', 'photo_captured', 'start_failed', 'closed']);
 
 const reply = (status, body, headers = {}) => Response.json(body, { status, headers });
 const ROUND_ID = /^[0-9a-f]{64}$/;
@@ -41,12 +45,17 @@ async function human(env, token, ip, pass) {
   return result.success === true;
 }
 
-async function api(request, env, path, ip) {
+async function api(request, env, path, ip, ctx) {
   const gate = env.GATE.get(env.GATE.idFromName('gate'));
   if (path === 'status' && request.method === 'GET') {
     // waiting and wait (seconds) are shown under Start shooting, before the player joins the line.
     const { active, slots, waiting, wait } = await gate.status();
     return reply(200, { configured: Boolean(env.REACTOR_API_KEY), model: MODEL, activeSessions: active, slots, waiting, wait, turnstile: env.TURNSTILE_SECRET ? env.TURNSTILE_SITE_KEY : null });
+  }
+  if (path === 'health' && request.method === 'GET') {
+    // Which production checks are failing, without details; the daily health check reads it. See DEPLOYMENT.md, "Alerts".
+    if (env.API_LIMITER && !(await env.API_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many requests. Slow down a little.' });
+    return reply(200, await health(env), { 'Cache-Control': 'no-store' });
   }
   if (path === 'leaderboard' && request.method === 'GET') {
     if (env.API_LIMITER && !(await env.API_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many requests. Slow down a little.' });
@@ -87,6 +96,8 @@ async function api(request, env, path, ip) {
     if (result.jwt) await record(env, request, ip, { ...ids, type: 'slot_opened', label: ticket ? 'line' : 'direct' });
     else if (result.queue && !ticket) await record(env, request, ip, { ...ids, type: 'line_joined', value: result.queue.position });
     else if (result.error === 'full' || result.error === 'daily') await record(env, request, ip, { ...ids, type: 'turned_away', label: result.error });
+    // The Monitor checks that rounds given a slot get live video (see monitor-core.js).
+    if (result.jwt && typeof body.run === 'string') ctx.waitUntil(report(env, 'slotOpened', body.run.slice(0, 80)));
     if (result.jwt) return reply(200, { jwt: result.jwt });
     // `code` lets the game show its own title and note for each case (newsworthy.js, CANT_START).
     // This wording keeps the game's "stop the previous session" button working.
@@ -129,17 +140,19 @@ async function api(request, env, path, ip) {
     const point = toDataPoint(await readJson(request, LIMITS.event), await playerId(env.PLAYER_SALT, ip), undefined, request.cf?.country);
     if (!point) return reply(400, { error: 'Unknown event' });
     env.EVENTS?.writeDataPoint(point);
+    const [type, label, , , , run] = point.blobs;
+    if (VIDEO_EVENTS.has(type) && run) ctx.waitUntil(report(env, 'roundEvent', { type, run, label, value: point.doubles[0] }));
     return reply(200, { saved: true });
   }
   return reply(404, { error: 'Not found' });
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/')) {
       const ip = request.headers.get('CF-Connecting-IP') || 'local';
-      try { return await api(request, env, url.pathname.slice(5), ip); }
+      try { return await api(request, env, url.pathname.slice(5), ip, ctx); }
       catch (error) {
         // Workers Logs keeps this; the player only sees the short message.
         console.error(`/api/${url.pathname.slice(5)} failed:`, error?.message, error?.detail || '', error?.stack || '');
@@ -148,5 +161,9 @@ export default {
     }
     if (url.pathname === '/') return env.ASSETS.fetch(new Request(new URL('/news-design.html', url), request));
     return env.ASSETS.fetch(request);
+  },
+  // The Cron Trigger in wrangler.jsonc: checks photo scoring and Reactor (see monitor.js).
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(scheduledChecks(env, controller.scheduledTime));
   },
 };

@@ -32,7 +32,8 @@ Reactor (live video) and Gemini (photo judge) are the only services outside Clou
 | Gate | `worker/src/gate.js`, logic in `gate-core.js` | One live slot (`LIVE_SLOTS`, set to Reactor's per-model limit) and a first-come-first-served line. `/api/status` also returns how many are `waiting` and the `wait` (seconds) for someone joining now; the How to play popup shows the wait and why there is one ("One player at a time. 4 ahead of you.") under its button, which reads Join the line while the game is busy, checking every 10 s while it's open. Players in line see their place and an estimated wait on the loading screen: each slot frees up once its round has run as long as the last 10 real rounds did on average (150 s until any are timed), and each player ahead then takes that long. Each address can hold 2 places. Refusals carry a `code` (`ip`, `daily`, `line`, `expired`, `full`) that the game turns into its own title and note. A waiting ticket expires after 15 s without a check-in. A token that never starts a session loses its slot after 90 s, and a game whose start fails frees it at once. When a round ends, the slot is held until Reactor confirms the session is gone, so the next player isn't refused by Reactor's limit. A session keeps its slot for 240 s + 15 s, then the Gate's alarm ends it with Reactor. While it holds a slot the game checks in every 10 s (`/api/alive`); a slot whose check-ins stop for 40 s is ended, because browsers don't send the goodbye cleanup when a tab is destroyed. There's a cap of 500 sessions a day. "Stop previous session" ends only the caller's own sessions. |
 | Round | `worker/src/round.js` | Runs `createNewsJudge` from `orbis-motion-test/news-judge-api.js` for one round and saves after every photo (`snapshot`/`restore`), because idle Durable Objects are dropped from memory. After each photo it writes the photo to R2 and the round's score to D1. An hour after the round starts it copies itself to R2; nothing is deleted. |
 | Leaderboard | `worker/src/leaderboard.js`, schema in `worker/migrations/` | See "Leaderboard and saved photos". |
-| Reactor client | `worker/src/reactor.js` | Mints tokens with `max_sessions: 1` and `max_session_duration_seconds: 240`, and deletes sessions. |
+| Reactor client | `worker/src/reactor.js` | Mints tokens with `max_sessions: 1` and `max_session_duration_seconds: 240`, and deletes sessions. Reads the balance and recent sessions for the alerts. |
+| Monitor | `worker/src/monitor.js`, logic in `monitor-core.js` | Checks photo scoring every 15 min and Reactor hourly (Cron Trigger), watches real photo reviews and rounds, and alerts Varick by Telegram and email. See "Alerts". |
 | Config | `worker/wrangler.jsonc` | Bindings, the custom domain route, the vars `LIVE_SLOTS`, `SLOTS_PER_IP`, `DAILY_SESSION_CAP` and `TURNSTILE_SITE_KEY`. |
 | Deploy filter | `orbis-motion-test/public/.assetsignore` | Keeps unused local-only public files (brand concepts, old opening images, `preview.webm`) out of the upload. |
 
@@ -60,6 +61,7 @@ These are set on the Worker with `wrangler secret`, never committed:
 - `GEMINI_API_KEY`
 - `TURNSTILE_SECRET`: from the Turnstile widget "Newsworthy", which allows `newsworthy.vamonke.com`, `newsworthy.vamonke.workers.dev` and `localhost`. The site key is public and lives in `wrangler.jsonc`.
 - `PLAYER_SALT`: a random value that keys the hashed IP used to count unique players (see Analytics) and to make up leaderboard names. Without it no player id is recorded. Keep it the same, or players are counted again and every name on the leaderboard changes.
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ALERT_EMAIL_TO`: where alerts go. See "Alerts". Without them the checks still run, but `/api/health` shows `alerts: "failing"`.
 - `TURNSTILE_BYPASS`: a secret pass that skips Turnstile, so agents' test browsers (which Turnstile blocks) can play in production. Open the game once with `?pass=<value>`; the tab keeps it and removes it from the address bar. The value is in `worker/.dev.vars`. Live-slot and rate limits still apply. To revoke it, run `npx wrangler secret delete TURNSTILE_BYPASS`, or `put` a new value.
 
 For local runs, the same keys go in `worker/.dev.vars`, which git ignores. The Reactor and Gemini values are also in the root `.env.local`.
@@ -109,6 +111,36 @@ The dashboard can do all of these under Workers & Pages → newsworthy.
     | jq -r '.result.events.events[] | "\(.timestamp/1000|floor|todate) \(.source.message // .["$metadata"].message)"'
   ```
 - **Gemini `402`** means the prepaid credits ran out (it happened on 26 Sep 2026). Top up at https://ai.studio/projects. No redeploy is needed.
+- **Gemini `429` "exceeded its monthly spending cap"** means the project's spend cap was reached (28–29 Sep 2026). Raise it at https://ai.studio/projects → Billing. No redeploy is needed.
+
+## Alerts
+
+The Worker checks itself and messages Varick on Telegram and by email when something breaks, again every hour (every day for Reactor credits and the Reactor API) while it stays broken, and once when it recovers. Added after photo scoring was down for 16½ hours on 28–29 Sep 2026 (see "Lessons from launch").
+
+| Check | How | Alerts when |
+|---|---|---|
+| Photo scoring | Every 15 min the Cron Trigger runs the real judge code and relay (`createNewsJudge`, `withRelay`) with the production key on a fixed test photo (`worker/src/probe-image.js`). Real players' photo reviews also report to the Monitor from the Round object. | The test photo fails with a billing, key or rejected-request error (402, 429 spending cap, 401/403, other 400s), or twice in a row with one that may pass (timeouts, 5xx, rate limits). Or 3 players' photo reviews in a row fail. Only Gemini failures count, not "Invalid photograph" or "Round expired". |
+| The US relay | The same test photo, forced through `GeminiRelay`, hourly. | It fails while the direct path works. |
+| Live video | `slot_opened` from `/api/token`, and `first_video_frame`, `photo_captured`, `start_failed` and `closed` from `/api/event`, matched by run id. | The last 3 rounds that got a slot had no video after 3 min. Players who leave in the first minute don't count. |
+| Reactor | Hourly: mints a token (free, no session), reads the balance and last 20 sessions from the account API. | Under $20 left, a session open more than 5 min (past the 240 s cap), or the API fails. |
+
+- **Nothing is saved from the test photo.** It doesn't use a Round object, R2, D1 or Analytics Engine, so it's off the leaderboard and out of player numbers, and it never touches Reactor. It costs about 5 small Gemini calls an hour (the 15-min check plus the hourly relay check), each one 160×120 image. Workers Logs show `[probe] direct ok in … ms` or `[probe] … failed: …`.
+- **Every alert is in Workers Logs** as `[alert] …`, and delivery failures as `[alert] delivery failed: …`.
+- **`GET /api/health`** says which checks are failing, when the test photo last ran and whether the last alert went out: `{"ok":true,"failing":[],"lastProbeAt":"…","probeStale":false,"alerts":"ok"}`. No error details. The daily health check reads it, so it notices if the cron stops (`probeStale`) or alerts can't be delivered (`alerts: "failing"`). The Monitor state is one Durable Object (`MONITOR`, name `monitor`).
+- **When a channel is added or changed**, the next cron run sends "Newsworthy alerts are on (Telegram and email)", so a wrong token or address shows up at once.
+- **Not covered:** the Worker itself being down (the daily health check covers that), and Reactor video when nobody is playing. A scheduled full round would cover the second, but costs about $1.16 each and takes the only live slot from players, so it isn't run; play a round after deploys instead.
+- **Test it locally:** `npx wrangler dev --test-scheduled --var ALERT_EMAIL_TO:test@example.com` in `worker/`, then `curl "http://127.0.0.1:8787/__scheduled?cron=*/15+*+*+*+*"`. Wrangler saves the email under `worker/.wrangler/tmp/email/`. Add `--var GEMINI_API_KEY:bad` to see a failure alert. Each run makes real Gemini calls with the `.dev.vars` key.
+
+### Setting up the alert channels
+
+1. **Telegram:** message @BotFather, send `/newbot`, and keep the token. Send your new bot `/start`, then read your chat id from `curl -s https://api.telegram.org/bot<token>/getUpdates | jq '.result[0].message.chat.id'`. In `worker/`: `npx wrangler secret put TELEGRAM_BOT_TOKEN` and `npx wrangler secret put TELEGRAM_CHAT_ID`.
+2. **Email:** in the Cloudflare dashboard, `vamonke.com` → Email → Email Routing → enable it (it adds MX and SPF records; the domain had no MX records, and its old Namecheap SPF record goes). Under Destination addresses, add the address alerts go to and click the link in the verification email. Then `npx wrangler secret put ALERT_EMAIL_TO`. Mail comes from `alerts@vamonke.com` (`ALERT_EMAIL_FROM`). Don't commit the address: the repo is public.
+3. Within 15 min you should get "Newsworthy alerts are on" on both.
+
+### Preventing a spend-cap outage
+
+- **Keep the Gemini spend cap well above real spend.** It was SGD 2, which normal play used up in September; it's SGD 50 since 2026-09-29. Check real spend in AI Studio → Billing once a month and keep the cap at 3× or more.
+- **Budget alerts in Google Cloud** on project `gen-lang-client-0867812658` (Billing → Budgets & alerts): email at 50%, 80% and 100% of the cap. They come from Google's own spend figures, so they warn before the cap is reached; this Worker can only see the failure.
 
 ## Analytics
 
@@ -197,7 +229,7 @@ Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or
 ## Testing locally
 
 - **Run the Worker locally.** Run `npm run build:newsworthy` at the repo root, then `npx wrangler dev --port 8787 --ip 127.0.0.1` in `worker/`. Or use the `newsworthy-worker` entry in `.claude/launch.json`.
-- **Unit tests.** Run `cd worker && npm test` for the Gate and line, analytics events and the leaderboard (its queries run against the real schema in Node's built-in SQLite), and `npm run test:newsworthy` for the judge, including save/restore.
+- **Unit tests.** Run `cd worker && npm test` for the Gate and line, analytics events, the alerts (`monitor-core.test.js`) and the leaderboard (its queries run against the real schema in Node's built-in SQLite), and `npm run test:newsworthy` for the judge, including save/restore.
 - **Turnstile blocks automated browsers** (error 600010), so it can't be passed from a test browser. To test the flow, use Cloudflare's always-pass pair: site key `1x00000000000000000000AA` (via `--var TURNSTILE_SITE_KEY:...`) and secret `1x0000000000000000000000000000000AA` in `.dev.vars`. Put the real secret back afterwards. Requests that carry a waiting-line `ticket` skip Turnstile.
 - **Test the Gate for free.** Minting Reactor tokens with curl costs nothing, and you can pretend to be different players with the `CF-Connecting-IP` header. Only a real browser round uses Reactor time.
 
@@ -207,6 +239,7 @@ Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or
 - **Secrets reach every copy of the Worker a few seconds after a deploy.** Right after the first deploy, one `/api/token` request got through without Turnstile. It only happens on a first deploy; later deploys keep the existing secrets.
 - **Browsers pause animations in hidden or covered windows.** Photos used to wait for the shutter flash before being sent, so they stalled in background tabs. `shutter()` in `newsworthy-motion.js` now gives up after 300 ms.
 - **Reactor runs one session per model at a time, not five.** Until 2026-09-28 the Gate gave out 4 slots, so while one player was live the next got a slot, Reactor refused the session within 2 s, and the game retried every 10 s. Each failed try kept its slot for 90 s, so after two tries the player was told another session was still open. Nobody was ever put in line. On 2026-09-28, 19 of 40 starts failed this way. It was found by the pattern that no two Reactor sessions ever overlapped (`/accounts/<id>/sessions`) and confirmed with `/accounts/<id>/quotas`. Failed starts are now recorded as `start_failed`.
+- **Photo scoring was down for 16½ hours because the Gemini spend cap was SGD 2.** From 2026-09-28 13:09 UTC every photo got HTTP 429 "Your project has exceeded its monthly spending cap", and players saw "Editor unavailable (429). Retry this photo." 57 players in 70 rounds had 561 photos fail, and none were scored until about 05:38 UTC on 09-29. The daily health check found it hours later. The cap is now SGD 50, and the Worker now checks scoring every 15 min and alerts at once (see "Alerts").
 - **Durable Objects are dropped from memory after about 70–140 s idle.** The stream can take up to 2 minutes to load before the first photo, so rounds must stay saved in storage.
 
 ## Leaderboard and saved photos
@@ -226,4 +259,4 @@ Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or
 
 - **Estimated wait in the line.**
 - **Retrying a failed line check-in.** Right now one network error ends the wait.
-- **AI Gateway in front of Gemini**, for logs and a spend cap.
+- **AI Gateway in front of Gemini, with a fallback.** Logs and per-request cost for every judge call, and a fallback to a second Gemini key in a project with its own billing (or another provider) when the first answers 402 or 429, so a billing problem on one project doesn't stop scoring. Test it against the location refusals first: the Gateway calls Gemini from Cloudflare's location, like a round does.
