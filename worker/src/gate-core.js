@@ -13,7 +13,7 @@ export const LIMITS = {
   pollMs: 3_000, // how often a waiting player checks in
   aliveMs: 40_000, // a game that has checked in and then goes quiet this long has left (the game checks in every 10 s)
   roundMs: 150_000, // how long a player usually holds a slot, until real rounds have been timed
-  timedRounds: 10, // the wait estimate averages this many recent rounds
+  timedRounds: 20, // the wait estimate learns from this many recent rounds
 };
 
 export const emptyState = () => ({ slots: {}, line: [], day: '', opened: 0, rounds: [] });
@@ -69,12 +69,23 @@ export function timeRound(state, slot, now, limits = LIMITS) {
   state.rounds = [...(state.rounds || []), now - slot.since].slice(-limits.timedRounds);
 }
 
+// How much longer a slot's round will run. Some players quit early, so the average round is shorter
+// than a full one, and "average minus time so far" said a round in its last minute was nearly over.
+// Rounds that ended before this one's time so far say nothing about it, so this averages how much
+// longer the recent rounds that went past that point ran. None did: it's due to end any moment.
+function restOf(slot, rounds, usual, now) {
+  const ran = now - (slot.since ?? now);
+  if (!rounds.length) return Math.max(0, usual - ran);
+  const longer = rounds.filter((d) => d > ran);
+  return longer.length ? longer.reduce((a, d) => a + d - ran, 0) / longer.length : 0;
+}
+
 // Seconds until the player at this place in line (0 = front) gets a slot: each slot frees up when its
-// round has run for the usual time, and each player ahead then takes one for the usual time.
+// round has run its likely course, and each player ahead then takes one for the usual time.
 export function estimateWait(state, i, now, limits = LIMITS) {
   const rounds = state.rounds || [];
   const usual = rounds.length ? rounds.reduce((a, b) => a + b, 0) / rounds.length : limits.roundMs;
-  const free = Object.values(state.slots).map((s) => Math.max(0, (s.since ?? now) + usual - now));
+  const free = Object.values(state.slots).map((s) => restOf(s, rounds, usual, now));
   while (free.length < limits.slots) free.push(0);
   let wait = 0;
   for (let k = 0; k <= i; k++) {

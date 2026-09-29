@@ -216,6 +216,22 @@ test('the wait follows how long recent rounds really took', () => {
   assert.equal(s.rounds.length, LIMITS.timedRounds);
 });
 
+test('a round in progress is judged by the recent rounds that ran at least as long', () => {
+  const s = emptyState();
+  // Two players quit early, three played a full round (about 145 s from token to slot end).
+  for (const ms of [40_000, 60_000, 145_000, 145_000, 145_000]) timeRound(s, { sessionId: 'x', since: 0 }, ms, one);
+  assert.ok(admit(s, 'a', null, 0, one).ticket);
+  // 113 s in, the average round (107 s) says it's over; the full rounds say about 32 s are left.
+  assert.equal(lineStatus(s, 113_000, one).wait, 32);
+  // Early on, the rounds that quit still count: they might happen again.
+  assert.equal(lineStatus(s, 30_000, one).wait, 77);
+  // Past every recent round: any moment now.
+  assert.equal(lineStatus(s, 150_000, one).wait, 0);
+  // Players ahead each take the usual (average) round.
+  admit(s, 'b', null, 113_000, one);
+  assert.equal(lineStatus(s, 113_000, one).wait, 32 + 107);
+});
+
 test('with several slots, the line spreads across whichever frees up first', () => {
   const s = emptyState();
   const two = { ...LIMITS, slots: 2 };
