@@ -134,7 +134,7 @@ The Worker checks itself and messages Varick on Telegram and by email when somet
 ### Setting up the alert channels
 
 1. **Telegram:** message @BotFather, send `/newbot`, and keep the token. Send your new bot `/start`, then read your chat id from `curl -s https://api.telegram.org/bot<token>/getUpdates | jq '.result[0].message.chat.id'`. In `worker/`: `npx wrangler secret put TELEGRAM_BOT_TOKEN` and `npx wrangler secret put TELEGRAM_CHAT_ID`.
-2. **Email:** in the Cloudflare dashboard, `vamonke.com` → Email → Email Routing → enable it (it adds MX and SPF records; the domain had no MX records, and its old Namecheap SPF record goes). Under Destination addresses, add the address alerts go to and click the link in the verification email. Then `npx wrangler secret put ALERT_EMAIL_TO`. Mail comes from `alerts@vamonke.com` (`ALERT_EMAIL_FROM`). Don't commit the address: the repo is public.
+2. **Email** (set up 2026-09-29: Email Routing is on for `vamonke.com`, the alert address is a verified destination and `ALERT_EMAIL_TO` is set; redo only to change the address): in the Cloudflare dashboard, `vamonke.com` → Email → Email Routing → enable it (it adds MX and SPF records; the domain had no MX records, and its old Namecheap SPF record goes). Under Destination addresses, add the address alerts go to and click the link in the verification email. Then `npx wrangler secret put ALERT_EMAIL_TO`. Mail comes from `alerts@vamonke.com` (`ALERT_EMAIL_FROM`). Don't commit the address: the repo is public.
 3. Within 15 min you should get "Newsworthy alerts are on" on both.
 
 ### Preventing a spend-cap outage
