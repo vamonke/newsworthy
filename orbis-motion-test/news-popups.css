@@ -273,6 +273,20 @@ dialog.lb.np:not(#_) { width: min(1240px,92vw); }
 .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-n svg { width: clamp(32px,2.6vw,42px); }
 .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-thumbs img { width: clamp(64px,5.4vw,88px); }
 .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .np-money { font-size: clamp(28px,2.3vw,38px); }
+.lb.np:not(#_) .lb-tabs { display: flex; border: 2px solid var(--wire-ink); }
+.lb.np:not(#_) .lb-tabs button { padding: 9px 18px 8px; border: 0; background: none; color: var(--wire-ink); font: 700 clamp(11px,.9vw,14px)/1 var(--np-mono); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.lb.np:not(#_) .lb-tabs button + button { border-left: 2px solid var(--wire-ink); }
+.lb.np:not(#_) .lb-tabs button[aria-pressed=true] { background: var(--wire-ink); color: var(--wire-paper); }
+.lb.np:not(#_) .lb-tabs button:focus-visible { outline: 3px solid var(--wire-yellow); outline-offset: 2px; }
+.lb.np:not(#_) .lb-name { display: grid; gap: 6px; min-width: 0; }
+/* The viewer's own row when they're outside the top 10, pinned under the board. */
+.lb.np:not(#_) .lb-you-row { max-height: none; margin-top: 0; overflow: visible; border-top: 3px double var(--wire-ink); }
+/* Lifetime earnings: under each name on the board and the player view, and under "You earned" on the results popup. */
+.np:not(#_) .lifetime { color: var(--wire-muted); font: 700 clamp(10px,.8vw,12px)/1 var(--np-mono); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.np:not(#_) .lifetime[hidden] { display: none; }
+.np:not(#_) .recap-earned:has(.lifetime:not([hidden])) { gap: 2px; }
+.np:not(#_) .recap-earned .lifetime { margin-top: 4px; font-size: clamp(11px,.9vw,14px); }
+.np:not(#_) .recap-earned .lifetime b { color: var(--wire-ink); }
 .lb.np:not(#_) .lb-status:empty { display: none; }
 .lb.np:not(#_) .lb-status { margin-top: 16px; text-align: center; }
 /* Player view header: rank over name on the left, Score over the amount on the right. */
@@ -295,3 +309,21 @@ dialog.lb.np:not(#_) { width: min(1240px,92vw); }
   .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .np-money { font-size: 24px; }
   .lb.np:not(#_) .lb-rows li:nth-child(-n+3) .lb-n svg { width: 36px; }
 }
+
+/* "Just sold": another player's sale, bottom left, 4 s (newsworthy-sold.js). A popover, so it shows above open popups. */
+.sold-toast[popover] { position: fixed; inset: auto auto 16px 16px; margin: 0; padding: 0; width: min(360px,calc(100vw - 32px)); overflow: visible; border: 0; background: none; color: var(--wire-ink); pointer-events: none; }
+.sold-toast .card { display: grid; grid-template-columns: 96px minmax(0,1fr); gap: 12px; align-items: center; padding: 10px 12px 10px 10px; background: var(--wire-paper) var(--wire-texture); border: 2px solid var(--wire-ink); box-shadow: 0 10px 30px #0008; transform: rotate(-.6deg); }
+.sold-toast .np-print { position: relative; display: block; padding: 3px; background: #f6f5f0; box-shadow: 0 1px 0 rgba(0,0,0,.2), 0 4px 10px rgba(0,0,0,.25); }
+.sold-toast .np-print img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+.sold-toast .tag { position: absolute; top: -8px; right: -8px; padding: 4px 6px 2px; color: #fff; background: var(--wire-money); font: 900 16px/1 var(--np-cond); transform: rotate(3deg); }
+.sold-toast .who { display: flex; align-items: center; gap: 6px; margin: 0 0 5px; font: 700 10px/1.2 var(--np-mono); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+.sold-toast .who::before { content: '●'; color: var(--wire-red); }
+.sold-toast .who img { width: 14px; aspect-ratio: 4/3; object-fit: cover; border: 1px solid var(--wire-ink); }
+.sold-toast .who span { overflow: hidden; text-overflow: ellipsis; }
+.sold-toast b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font: 900 17px/.98 var(--np-cond); text-transform: uppercase; }
+.sold-toast[popover]:popover-open { animation: sold-in .35s cubic-bezier(.2,.9,.3,1.2); }
+.sold-toast.out { animation: sold-out .3s ease-in forwards; }
+@keyframes sold-in { from { transform: translateX(-120%); } }
+@keyframes sold-out { to { transform: translateX(-120%); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sold-toast[popover]:popover-open, .sold-toast.out { animation-name: none; } }
+@media (max-width: 560px) { .sold-toast[popover] { inset: auto 16px 16px; } .sold-toast .card { grid-template-columns: 72px minmax(0,1fr); } }

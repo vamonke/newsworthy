@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { nameFor, soldPhotos, toBoard, listsPhoto, countryCode, UPSERT, TOP, RANK, ROUND, BEST } from './src/leaderboard.js';
+import { nameFor, soldPhotos, toBoard, toSold, listsPhoto, countryCode, weekStart, UPSERT, TOP, RANK, ROUND, BEST, SOLD, ROUND_PHOTOS } from './src/leaderboard.js';
 
 test('a player id always gives the same two-word name and number', () => {
   assert.equal(nameFor('bdf0edb99a002e95'), nameFor('bdf0edb99a002e95'));
@@ -24,14 +24,17 @@ test('only sold photos go on the board, best first', () => {
 // The queries run against the real schema in SQLite, which is what D1 is.
 function board() {
   const db = new DatabaseSync(':memory:');
-  for (const file of ['0001_scores.sql', '0002_country.sql']) db.exec(readFileSync(new URL(`./migrations/${file}`, import.meta.url), 'utf8'));
+  for (const file of ['0001_scores.sql', '0002_country.sql', '0003_updated.sql']) db.exec(readFileSync(new URL(`./migrations/${file}`, import.meta.url), 'utf8'));
+  // `created` is also the time of the write, so a later write for a round moves its `updated` on.
   const post = (round, player, total, created, photos = [{ id: 'shot-1', headline: 'UFO', earned: total }], country = '') =>
     db.prepare(UPSERT).run(round, player, nameFor(player), total, JSON.stringify(photos), created, country);
-  const top = () => db.prepare(TOP).all();
+  const top = (since = 0) => db.prepare(TOP).all(since);
   const round = (id) => db.prepare(ROUND).get(id);
-  const best = (player) => db.prepare(BEST).get(player);
-  const rank = (mine) => db.prepare(RANK).get(mine.player, mine.total).rank;
-  return { post, top, round, rank, best };
+  const best = (player, since = 0) => db.prepare(BEST).get(player, since);
+  const rank = (mine, since = 0) => db.prepare(RANK).get(mine.player, mine.total, since).rank;
+  const sold = () => db.prepare(SOLD).all();
+  const photos = (id) => db.prepare(ROUND_PHOTOS).get(id);
+  return { post, top, round, rank, best, sold, photos };
 }
 
 test('the board shows each player’s best round, top 10', () => {
@@ -74,7 +77,7 @@ test('the board marks the viewer’s row and never sends player ids', () => {
   const mine = b.round('b'.repeat(64));
   const out = toBoard(b.top(), mine, b.rank(mine));
   assert.deepEqual(out.top.map((r) => r.you), [false, true]);
-  assert.deepEqual(out.you, { rank: 2, total: 4000 });
+  assert.deepEqual([out.you.rank, out.you.total, out.you.name], [2, 4000, nameFor('bob')]);
   assert.equal(out.top[0].photos[0].src, `/api/photo/${'a'.repeat(64)}/shot-1.jpg`);
   assert.ok(!JSON.stringify(out).includes('alice'));
 });
@@ -88,7 +91,7 @@ test('a returning viewer is found by their player id, at their best round', () =
   assert.equal(mine.total, 4000);
   const out = toBoard(b.top(), mine, b.rank(mine));
   assert.deepEqual(out.top.map((r) => r.you), [false, true]);
-  assert.deepEqual(out.you, { rank: 2, total: 4000 });
+  assert.deepEqual([out.you.rank, out.you.total], [2, 4000]);
   assert.equal(b.best('nobody'), undefined);
 });
 
@@ -98,6 +101,7 @@ test('each row carries its round’s country for the flag', () => {
   b.post('b'.repeat(64), 'bob', 4000, 2);
   b.post('c'.repeat(64), 'alice', 1000, 3, undefined, 'GB'); // a lower round elsewhere doesn't change her row
   const out = toBoard(b.top(), null, null);
+  assert.equal(out.you, null);
   assert.deepEqual(out.top.map((r) => [r.name, r.country]), [[nameFor('alice'), 'SG'], [nameFor('bob'), '']]);
   assert.equal(b.best('alice').country, 'SG');
 });
@@ -107,7 +111,75 @@ test('only real two-letter countries are kept', () => {
   for (const code of ['XX', 'T1', 'sg', 'SGP', '', undefined, null]) assert.equal(countryCode(code), '', String(code));
 });
 
+test('the week starts Monday 00:00 UTC', () => {
+  const monday = Date.UTC(2026, 8, 28);
+  assert.equal(weekStart(monday), monday);
+  assert.equal(weekStart(Date.UTC(2026, 8, 30, 9, 20)), monday);
+  assert.equal(weekStart(Date.UTC(2026, 9, 4, 23, 59, 59, 999)), monday); // Sunday night
+  assert.equal(weekStart(Date.UTC(2026, 9, 5)), Date.UTC(2026, 9, 5));
+  assert.equal(weekStart(Date.UTC(2026, 8, 28) - 1), Date.UTC(2026, 8, 21));
+});
+
+test('the weekly board only counts rounds since Monday, and a newcomer can top it', () => {
+  const b = board(), monday = Date.UTC(2026, 8, 28);
+  b.post('old', 'veteran', 9001, monday - 1000);
+  b.post('new1', 'veteran', 500, monday + 1000);
+  b.post('new2', 'newcomer', 3000, monday + 2000);
+  assert.deepEqual(b.top(monday).map((r) => [r.player, r.total]), [['newcomer', 3000], ['veteran', 500]]);
+  assert.deepEqual(b.top(0).map((r) => [r.player, r.total]), [['veteran', 9001], ['newcomer', 3000]]);
+  assert.equal(b.rank(b.round('new2'), monday), 1);
+  assert.equal(b.rank(b.round('new2'), 0), 2);
+  assert.equal(b.best('veteran', monday).round, 'new1');
+  assert.equal(b.best('newcomer', monday + 5000), undefined);
+});
+
+test('every row carries lifetime earnings across all the player’s rounds, even ones off this board', () => {
+  const b = board(), monday = Date.UTC(2026, 8, 28);
+  b.post('a1', 'alice', 4000, monday - 1000);
+  b.post('a2', 'alice', 2500, monday + 1000);
+  b.post('b1', 'bob', 3000, monday + 2000);
+  assert.deepEqual(b.top(monday).map((r) => [r.player, r.total, r.lifetime]), [['bob', 3000, 3000], ['alice', 2500, 6500]]);
+  assert.equal(b.round('a2').lifetime, 6500);
+  assert.equal(b.best('alice', monday).lifetime, 6500);
+  const out = toBoard(b.top(monday), b.round('a2'), 2);
+  assert.deepEqual(out.top.map((r) => r.lifetime), [3000, 6500]);
+  assert.equal(out.you.lifetime, 6500);
+});
+
+test('a viewer outside the top 10 still gets their whole row, to show under the board', () => {
+  const b = board();
+  for (let i = 0; i < 10; i++) b.post('x' + i, 'p' + i, 5000 + i, i);
+  b.post('c'.repeat(64), 'carol', 1200, 20, undefined, 'SG');
+  const mine = b.best('carol');
+  const out = toBoard(b.top(), mine, b.rank(mine));
+  assert.equal(out.top.some((r) => r.you), false);
+  assert.deepEqual({ ...out.you, photos: out.you.photos.length }, { name: nameFor('carol'), country: 'SG', total: 1200, lifetime: 1200, rank: 11, photos: 1 });
+});
+
+test('the sold feed lists the latest rounds’ sold photos, newest round first, best photo first', () => {
+  const b = board();
+  const r = (c) => c.repeat(64);
+  b.post(r('a'), 'alice', 1000, 1, [{ id: 'shot-1', headline: 'Fire', earned: 1000 }], 'SG');
+  b.post(r('b'), 'bob', 750, 2, [{ id: 'shot-2', headline: 'Duck', earned: 750 }]);
+  b.post(r('a'), 'alice', 1750, 3, [{ id: 'shot-1', headline: 'Fire', earned: 1000 }, { id: 'shot-4', headline: 'UFO', earned: 750 }], 'SG');
+  const out = toSold(b.sold());
+  assert.deepEqual(out.sold.map((s) => [s.key, s.at]), [[`${r('a')}/shot-1`, 3], [`${r('a')}/shot-4`, 3], [`${r('b')}/shot-2`, 2]]);
+  assert.deepEqual(out.sold[1], { key: `${r('a')}/shot-4`, src: `/api/photo/${r('a')}/shot-4.jpg`, name: nameFor('alice'), country: 'SG', headline: 'UFO', earned: 750, at: 3 });
+  assert.ok(!JSON.stringify(out).includes('alice'));
+});
+
+test('the sold feed only reaches back 6 rounds', () => {
+  const b = board();
+  for (let i = 0; i < 9; i++) b.post(String(i).repeat(64), 'p' + i, 100, i);
+  const rounds = new Set(toSold(b.sold()).sold.map((s) => s.key.split('/')[0][0]));
+  assert.deepEqual([...rounds], ['8', '7', '6', '5', '4', '3']);
+});
+
 test('only a round’s sold photos are served', () => {
+  const b = board();
+  b.post('a'.repeat(64), 'alice', 750, 1, [{ id: 'shot-2', headline: 'Duck', earned: 750 }]);
+  assert.equal(listsPhoto(b.photos('a'.repeat(64)), 'shot-2'), true);
+  assert.equal(listsPhoto(b.photos('b'.repeat(64)), 'shot-2'), false);
   const row = { photos: JSON.stringify([{ id: 'shot-2' }]) };
   assert.equal(listsPhoto(row, 'shot-2'), true);
   assert.equal(listsPhoto(row, 'shot-1'), false);

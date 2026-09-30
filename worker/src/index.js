@@ -4,7 +4,7 @@ import { GeminiRelay } from './relay.js';
 import { Monitor, report, health, scheduledChecks } from './monitor.js';
 import { MODEL } from './reactor.js';
 import { toDataPoint, playerId, SERVER_EVENT_TYPES } from './events.js';
-import { TOP, RANK, ROUND, BEST, toBoard, listsPhoto } from './leaderboard.js';
+import { TOP, RANK, ROUND, BEST, SOLD, ROUND_PHOTOS, weekStart, toBoard, toSold, listsPhoto } from './leaderboard.js';
 
 // Records an analytics event from the Worker itself, e.g. demand for live slots.
 async function record(env, request, ip, event) {
@@ -59,21 +59,42 @@ async function api(request, env, path, ip, ctx) {
   }
   if (path === 'leaderboard' && request.method === 'GET') {
     if (env.API_LIMITER && !(await env.API_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many requests. Slow down a little.' });
-    // Top 10, each player's best round. The viewer is found by their player id, so their row is marked
-    // after a refresh too. ?round= (sent from the results popup) also covers a round with no player id.
-    const round = new URL(request.url).searchParams.get('round');
+    // Top 10, each player's best round: ?board=week (the default, since Monday 00:00 UTC) or ?board=all.
+    // The viewer is found by their player id, so their row is marked after a refresh too. ?round= (sent from
+    // the results popup) marks that round instead, when it's on this board, and also covers a round with no player id.
+    const params = new URL(request.url).searchParams;
+    const since = params.get('board') === 'all' ? 0 : weekStart(Date.now());
+    const round = params.get('round');
     const viewer = await playerId(env.PLAYER_SALT, ip);
-    const mine = (ROUND_ID.test(round || '') && await env.SCORES.prepare(ROUND).bind(round).first())
-      || (viewer && await env.SCORES.prepare(BEST).bind(viewer).first()) || null;
-    const { results } = await env.SCORES.prepare(TOP).all();
-    const rank = mine ? (await env.SCORES.prepare(RANK).bind(mine.player, mine.total).first()).rank : null;
-    return reply(200, toBoard(results, mine, rank), { 'Cache-Control': 'no-store' });
+    const posted = ROUND_ID.test(round || '') ? await env.SCORES.prepare(ROUND).bind(round).first() : null;
+    const mine = (posted && posted.created >= since ? posted : null)
+      || (posted && await env.SCORES.prepare(BEST).bind(posted.player, since).first())
+      || (viewer && await env.SCORES.prepare(BEST).bind(viewer, since).first()) || null;
+    const { results } = await env.SCORES.prepare(TOP).bind(since).all();
+    const rank = mine ? (await env.SCORES.prepare(RANK).bind(mine.player, mine.total, since).first()).rank : null;
+    // `asked` tells the results popup that `you` is the round it asked about, so it can add this round's
+    // latest total to the player's lifetime earnings without counting it twice.
+    const board = toBoard(results, mine, rank);
+    if (board.you && posted && mine === posted) board.you.asked = true;
+    return reply(200, board, { 'Cache-Control': 'no-store' });
+  }
+  if (path === 'sold' && request.method === 'GET') {
+    // The latest sold photos, for the "just sold" pop-up. Open games check every 15 s; one D1 read per 10 s
+    // per Cloudflare location answers all of them.
+    if (env.API_LIMITER && !(await env.API_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many requests. Slow down a little.' });
+    const key = new Request(new URL('/api/sold', request.url));
+    const cached = await caches.default.match(key);
+    if (cached) return cached;
+    const { results } = await env.SCORES.prepare(SOLD).all();
+    const response = reply(200, toSold(results), { 'Cache-Control': 'public, max-age=10' });
+    ctx.waitUntil(caches.default.put(key, response.clone()));
+    return response;
   }
   const photoPath = request.method === 'GET' && path.match(/^photo\/([0-9a-f]{64})\/(shot-[0-9]{1,2})\.jpg$/);
   if (photoPath) {
     // Only photos that a leaderboard round sold.
     const [, round, id] = photoPath;
-    if (!listsPhoto(await env.SCORES.prepare(ROUND).bind(round).first(), id)) return reply(404, { error: 'Not found' });
+    if (!listsPhoto(await env.SCORES.prepare(ROUND_PHOTOS).bind(round).first(), id)) return reply(404, { error: 'Not found' });
     const object = await env.PHOTOS.get(`rounds/${round}/${id}.jpg`);
     if (!object) return reply(404, { error: 'Not found' });
     return new Response(object.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable' } });

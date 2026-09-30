@@ -48,9 +48,10 @@ export default defineConfig(({ mode }) => {
           try {
             const path = req.url.split('?')[0];
             if (path === '/status') return send(res, 200, { configured: Boolean(apiKey), model: MODEL, activeSessions: sessions.size });
-            // The leaderboard lives in D1 on the Worker (worker/src/leaderboard.js); locally it is empty.
+            // The leaderboard and the "just sold" feed live in D1 on the Worker (worker/src/leaderboard.js); locally they're empty.
             // To try it with data, run the Worker locally (`npm run dev` in worker/).
             if (path === '/leaderboard') return send(res, 200, { top: [], you: null });
+            if (path === '/sold') return send(res, 200, { sold: [] });
             if (req.method !== 'POST') return next();
             // Local dev API: reject cross-origin writes.
             if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return send(res, 403, { error: 'Invalid origin' });
