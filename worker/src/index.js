@@ -82,13 +82,14 @@ async function api(request, env, path, ip, ctx) {
     // The latest sold photos, for the "just sold" pop-up. Open games check every 15 s; one D1 read per 10 s
     // per Cloudflare location answers all of them.
     if (env.API_LIMITER && !(await env.API_LIMITER.limit({ key: ip })).success) return reply(429, { error: 'Too many requests. Slow down a little.' });
+    // The browser gets no-store: a cached copy comes back from the Cache API with the zone's Browser Cache TTL
+    // (4 h) in its Cache-Control, which would freeze the feed in the browser. The 10 s is for this cache only.
     const key = new Request(new URL('/api/sold', request.url));
     const cached = await caches.default.match(key);
-    if (cached) return cached;
-    const { results } = await env.SCORES.prepare(SOLD).all();
-    const response = reply(200, toSold(results), { 'Cache-Control': 'public, max-age=10' });
-    ctx.waitUntil(caches.default.put(key, response.clone()));
-    return response;
+    if (cached) return new Response(cached.body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    const body = JSON.stringify(toSold((await env.SCORES.prepare(SOLD).all()).results));
+    ctx.waitUntil(caches.default.put(key, new Response(body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=10' } })));
+    return new Response(body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   }
   const photoPath = request.method === 'GET' && path.match(/^photo\/([0-9a-f]{64})\/(shot-[0-9]{1,2})\.jpg$/);
   if (photoPath) {
