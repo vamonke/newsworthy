@@ -1,5 +1,5 @@
 // Live-session slot bookkeeping, kept free of I/O so it can be unit tested.
-// Production sets the slot count with LIVE_SLOTS (wrangler.jsonc) to Reactor's per-model session limit;
+// Production sets the slot count with LIVE_SLOTS (wrangler.jsonc), one below Reactor's session limit;
 // these defaults are what the unit tests run with.
 export const LIMITS = {
   slots: 4,

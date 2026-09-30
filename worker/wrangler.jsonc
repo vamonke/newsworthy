@@ -43,7 +43,7 @@
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "newsworthy_events" }],
   // Secrets (wrangler secret put): REACTOR_API_KEY, GEMINI_API_KEY, TURNSTILE_SECRET, and for alerts TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ALERT_EMAIL_TO.
   // The Turnstile widget "Newsworthy" allows newsworthy.vamonke.com, newsworthy.vamonke.workers.dev and localhost.
-  // LIVE_SLOTS must not exceed Reactor's concurrent_sessions_per_model quota for the model (1 for visko-orbis-stable); see DEPLOYMENT.md.
-  "vars": { "LIVE_SLOTS": "1", "SLOTS_PER_IP": "2", "DAILY_SESSION_CAP": "500", "TURNSTILE_SITE_KEY": "0x4AAAAAAFBfBHrEmQgwHW5g", "ALERT_EMAIL_FROM": "alerts@vamonke.com" },
+  // LIVE_SLOTS stays one below Reactor's concurrent_sessions quota (5), leaving a session free for tests; see DEPLOYMENT.md.
+  "vars": { "LIVE_SLOTS": "4", "SLOTS_PER_IP": "2", "DAILY_SESSION_CAP": "500", "TURNSTILE_SITE_KEY": "0x4AAAAAAFBfBHrEmQgwHW5g", "ALERT_EMAIL_FROM": "alerts@vamonke.com" },
   "observability": { "enabled": true }
 }
