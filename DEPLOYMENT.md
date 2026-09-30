@@ -215,14 +215,23 @@ Unique players: `SELECT count(DISTINCT blob4) FROM newsworthy_events WHERE blob4
 
 ## Playing in production (agents)
 
-Turnstile blocks automated browsers (error 600010), so an agent can't pass it. Use the secret pass instead:
+Turnstile blocks automated browsers (error 600010), so agents use the secret pass `TURNSTILE_BYPASS` instead. Read it from `worker/.dev.vars` (Git ignores that file; the same value is set on the Worker). When Varick asks for a production test, run it; don't hand it back to him. Some agents (Claude among them) won't type a secret into a public site in their browser, so there are three routes. Together they cover everything:
 
-1. Read `TURNSTILE_BYPASS` from `worker/.dev.vars`. Git ignores that file, and the same value is set on the Worker.
-2. Open `https://newsworthy.vamonke.com/?pass=<value>` in the browser pane. The tab keeps the pass and removes it from the address bar.
-3. Press **Start shooting**. The round skips Turnstile, and the Worker logs "Turnstile skipped with the secret pass". A How to play popup can appear over the live round; its button closes it. Pick a scene in the left panel, then click the video to take a photo.
-4. Every round uses real Reactor and Gemini time and takes one of the 4 live slots, so when the game is busy players wait in line behind it. Ask Varick before playing, and keep rounds short.
-   Rounds played this way are posted to the leaderboard like anyone else's, under Varick's network player id (`bdf0edb99a002e95`, shown as "Lively Yak 14"). Varick chose to keep them there.
-5. When done, close the tab. With the heartbeat the slot frees itself within about 40 s. The auto-mode permission check blocks calling `/api/stop-sessions` from curl, so don't count on that.
+1. **The live Gate, from the shell.** This checks slots, the line, the bot check and the pass against the real site, and it's free because no video starts:
+
+   ```bash
+   P=$(grep -h TURNSTILE_BYPASS worker/.dev.vars | cut -d= -f2- | tr -d '"'); U=https://newsworthy.vamonke.com/api
+   curl -s -X POST $U/token -H 'content-type: application/json' -d "{\"pass\":\"$P\",\"session\":\"agent-test\",\"run\":\"agent-test-1\"}"   # {jwt} = got a slot
+   curl -s $U/status                                   # activeSessions, slots, waiting
+   curl -s -X POST $U/stop-sessions -d '{}'            # frees this address's slots
+   curl -s -X POST $U/event -H 'content-type: application/json' -d '{"type":"closed","label":"left","value":5,"run":"agent-test-1"}'
+   ```
+
+   Send the last line once per `run` you opened. Without it, three slots that never got video set off the video alert (see "Alerts").
+2. **Real rounds, locally.** `wrangler dev` (the `newsworthy-worker` entry in `.claude/launch.json`, after `npm run build:newsworthy`) uses the same Reactor account and key, so its rounds are real Reactor sessions. Open `http://localhost:8787/?pass=<value>` in the browser pane and press **Start shooting**. To test several players at once, open more tabs (2 per address). Confirm with `/accounts/<id>/sessions` (see "Limits that drive the design"). Local rounds go to the local D1, not the live leaderboard.
+3. **Real rounds on the live site**, for agents that will use the pass there: open `https://newsworthy.vamonke.com/?pass=<value>` in the browser pane. The tab keeps the pass and removes it from the address bar. Press **Start shooting**; the Worker logs "Turnstile skipped with the secret pass". These rounds are posted to the leaderboard under Varick's network player id (`bdf0edb99a002e95`, shown as "Lively Yak 14"). Varick chose to keep them there.
+
+For routes 2 and 3: a How to play popup can appear over the live round, and its button closes it. Pick a scene in the left panel, then click the video to take a photo. Every round uses real Reactor and Gemini time (about $1.16) and takes one of the 4 live slots, so keep rounds short. When done, navigate the tab away or close it; the heartbeat frees the slot within about 40 s, and `/api/stop-sessions` frees it at once.
 
 Revoke or rotate the pass with `npx wrangler secret delete TURNSTILE_BYPASS`, or `npx wrangler secret put TURNSTILE_BYPASS` with a new value (update `.dev.vars` too). Slot, line and rate limits still apply with the pass.
 
