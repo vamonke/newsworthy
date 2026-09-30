@@ -17,14 +17,35 @@ function openPlayer(row,rank){$('#lb-player-rank').textContent=`#${rank} ${WHEN[
 function line(row,rank){const li=document.createElement('li'),button=document.createElement('button');button.className='lb-row'+(row.you?' you':'');const who=document.createElement('span');who.className='lb-name';const name=document.createElement('b');name.append(flag(row.country),row.name+(row.you?' (you)':''));const lifetime=document.createElement('span');lifetime.className='lifetime';lifetime.textContent=`${dollars(row.lifetime)} in total`;who.append(name,lifetime);const thumbs=document.createElement('span');thumbs.className='lb-thumbs';for(const p of row.photos.slice(0,3)){const img=new Image();img.src=p.src;img.alt='';img.loading='lazy';thumbs.append(img);}const money=document.createElement('strong');money.className='np-money';money.textContent=dollars(row.total);button.append(place(rank),who,thumbs,money);button.onclick=()=>openPlayer(row,rank);li.append(button);return li;}
 // The viewer's own row goes under the board when they're outside the top 10.
 function render(board){$('#lb-rows').replaceChildren(...board.top.map((row,i)=>line(row,i+1)));const you=board.you&&!board.top.some(r=>r.you)?{...board.you,you:true}:null;$('#lb-you').replaceChildren(...(you?[line(you,you.rank)]:[]));$('#lb-you').hidden=!you;$('#lb-status').textContent=board.top.length?'':tab==='week'?'No rounds yet this week. Play one to take #1.':'No scores yet. Play a round to be the first.';}
-async function load(){const which=tab;for(const b of document.querySelectorAll('#lb-tabs button'))b.setAttribute('aria-pressed',String(b.dataset.board===which));$('#lb-rows').replaceChildren();$('#lb-you').replaceChildren();$('#lb-you').hidden=true;$('#lb-status').textContent='Loading…';try{const q=new URLSearchParams({board:which});if(opened.round)q.set('round',opened.round);const r=await fetch('/api/leaderboard?'+q,{signal:AbortSignal.timeout(15000)});const board=await r.json();if(!r.ok)throw new Error(board.error||'Couldn’t load the leaderboard.');if(which===tab)render(board);}catch(e){if(which===tab)$('#lb-status').textContent=e.name==='TimeoutError'?'Couldn’t load the leaderboard. Try again.':e.message;}}
+// Boards fetched so far, by query. Opening the board or switching tabs shows the last copy at once and swaps in the
+// fresh one only if it changed, so the list never flashes empty. The weekly board is fetched in the background
+// after the page loads, and the other tab right after the first one shows.
+const boards=new Map(),queries=new Map(),boardQuery=(board,round)=>new URLSearchParams(round?{board,round}:{board}).toString();
+function fetchBoard(q){if(queries.has(q))return queries.get(q);const p=fetch('/api/leaderboard?'+q,{signal:AbortSignal.timeout(15000)}).then(async r=>{const board=await r.json();if(!r.ok)throw new Error(board.error||'Couldn’t load the leaderboard.');boards.set(q,{board,json:JSON.stringify(board)});return board;}).finally(()=>queries.delete(q));queries.set(q,p);return p;}
+// Loads the thumbnails into the browser cache (they never change), so rows don't open with empty frames.
+function warmPhotos(board){for(const row of board.top.slice(0,10))for(const p of row.photos.slice(0,3))new Image().src=p.src;}
+export function prefetchLeaderboard(round,{photos=false}={}){const q=boardQuery('week',round),have=boards.get(q);if(have){if(photos)warmPhotos(have.board);return;}fetchBoard(q).then(b=>{if(photos)warmPhotos(b);},()=>{});}
+async function load(){const which=tab,q=boardQuery(which,opened.round),other=boardQuery(which==='week'?'all':'week',opened.round);for(const b of document.querySelectorAll('#lb-tabs button'))b.setAttribute('aria-pressed',String(b.dataset.board===which));
+  // Without this round's copy, the same board without it is close enough to show while the right one loads.
+  const shown=boards.get(q)||(opened.round&&boards.get(boardQuery(which)));
+  if(shown)render(shown.board);else{$('#lb-rows').replaceChildren();$('#lb-you').replaceChildren();$('#lb-you').hidden=true;$('#lb-status').textContent='Loading…';}
+  try{const board=await fetchBoard(q);if(which===tab&&JSON.stringify(board)!==shown?.json)render(board);if(!boards.has(other))fetchBoard(other).then(warmPhotos,()=>{});}
+  catch(e){if(which===tab&&!shown)$('#lb-status').textContent=e.name==='TimeoutError'?'Couldn’t load the leaderboard. Try again.':e.message;}}
 for(const b of document.querySelectorAll('#lb-tabs button'))b.onclick=()=>{if(tab===b.dataset.board)return;tab=b.dataset.board;void load();};
 // From the results popup, the board opens on top of it: Back returns there and Play again starts a round.
-// From the header it only has Close. `round` marks the player's row.
-// It always opens on This week.
+// From the header it only has Close. `round` marks the player's row. It always opens on This week.
 export async function openLeaderboard({round,onPlay}={}){const dialog=$('#scores-dialog');opened={round};tab='week';$('#lb-back').hidden=$('#lb-again').hidden=!onPlay;$('#lb-close').hidden=Boolean(onPlay);$('#lb-again').onclick=()=>{dialog.close();onPlay?.();};if(!dialog.open)dialog.showModal();await load();}
-// Results popup: the player's lifetime earnings under "You earned", when they've played before. The server's total
-// for this round can trail the last photo by a moment (or the round isn't posted yet), so this round counts as
-// `money`, from the game. `asked` says the server's `you` is this round.
-export async function showLifetime(round,money){const el=$('#final-lifetime');el.hidden=true;if(!round)return;try{const r=await fetch('/api/leaderboard?'+new URLSearchParams({board:'all',round}),{signal:AbortSignal.timeout(15000)});const you=(await r.json()).you;if(!r.ok||!you)return;const lifetime=you.lifetime-(you.asked?you.total:0)+money;if(lifetime<=money)return;el.replaceChildren(Object.assign(document.createElement('b'),{textContent:dollars(lifetime)}),' in total');el.hidden=false;}catch{}}
+// Results popup: the player's lifetime earnings under "You earned", when they've played before. It's fetched when the
+// round starts (rememberLifetime), before the round has a score, so at the end it's that plus this round's money,
+// shown with the popup instead of popping in after it. If that fetch failed, it asks now: `asked` then says the
+// server's `you` is this round, whose total may trail the last photo by a moment.
+let before=null;
+export function rememberLifetime(){before=fetchBoard(boardQuery('all')).then(b=>b.you?b.you.lifetime:0,()=>null);}
+export async function showLifetime(round,money){const el=$('#final-lifetime');el.hidden=true;let lifetime=null;const earlier=await before;
+  if(earlier!=null)lifetime=earlier+money;
+  else if(round)try{const r=await fetch('/api/leaderboard?'+boardQuery('all',round),{signal:AbortSignal.timeout(15000)});const you=(await r.json()).you;if(r.ok&&you)lifetime=you.lifetime-(you.asked?you.total:0)+money;}catch{}
+  if(lifetime==null||lifetime<=money)return;el.replaceChildren(Object.assign(document.createElement('b'),{textContent:dollars(lifetime)}),' in total');el.hidden=false;}
 $('#lb-back').onclick=$('#lb-close').onclick=()=>$('#scores-dialog').close();
+// The board opens instantly: the weekly board loads once the page has settled, and its photos when the player heads for it.
+(window.requestIdleCallback||(f=>setTimeout(f,2000)))(()=>prefetchLeaderboard(),{timeout:4000});
+for(const type of ['pointerenter','focus','touchstart'])$('#high-scores').addEventListener(type,()=>prefetchLeaderboard(null,{photos:true}),{passive:true});
